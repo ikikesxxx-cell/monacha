@@ -14,7 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      characters: {
+        Row: {
+          avatar_url: string | null
+          behavior: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+          tagline: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          behavior: string
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+          tagline?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          behavior?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
+          tagline?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          parts: Json
+          role: string
+          ui_id: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          parts: Json
+          role: string
+          ui_id: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          parts?: Json
+          role?: string
+          ui_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          reply_length: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          reply_length?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          reply_length?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
