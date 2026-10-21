@@ -55,8 +55,8 @@
   --color-mint: var(--mint);
   --color-lavender: var(--lavender);
   --color-butter: var(--butter);
-  --font-display: var(--font-display);
-  --font-sans: var(--font-body);
+  --font-display: var(--font-display-family);
+  --font-sans: var(--font-body-family);
   --shadow-soft: var(--shadow-soft);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -70,8 +70,8 @@
 
 :root {
   --radius: 1.25rem;
-  --font-display: "Fraunces", Georgia, serif;
-  --font-body: "Nunito", system-ui, sans-serif;
+  --font-display-family: "Fraunces", Georgia, serif;
+  --font-body-family: "Nunito", system-ui, sans-serif;
   --background: oklch(0.975 0.015 70);
   --foreground: oklch(0.3 0.04 30);
   --card: oklch(0.995 0.008 70);
@@ -120,10 +120,10 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-body);
+    font-family: var(--font-body-family);
   }
   h1, h2, h3 {
-    font-family: var(--font-display);
+    font-family: var(--font-display-family);
     letter-spacing: -0.01em;
   }
 }
