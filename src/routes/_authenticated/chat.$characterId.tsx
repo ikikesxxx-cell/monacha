@@ -1,0 +1,158 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { authHeaders, type Character } from "@/lib/api";
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import { Button } from "@/components/ui/button";
+
+const chatQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["messages", id],
+    queryFn: async () => {
+      const [{ data: c, error }, { data: rows }] = await Promise.all([
+        supabase.from("characters").select("*").eq("id", id).single(),
+        supabase.from("messages").select("ui_id,role,parts").eq("character_id", id).order("created_at"),
+      ]);
+      if (error) throw error;
+      const messages = (rows ?? []).map((r) => ({ id: r.ui_id, role: r.role, parts: r.parts }) as UIMessage);
+      return { character: c as Character, messages };
+    },
+  });
+
+export const Route = createFileRoute("/_authenticated/chat/$characterId")({
+  head: () => ({
+    meta: [
+      { title: "Chat — Hearthtalk" },
+      { name: "description", content: "Chat and play stories with your AI character." },
+      { property: "og:title", content: "Chat — Hearthtalk" },
+      { property: "og:description", content: "Chat and play stories with your AI character." },
+    ],
+  }),
+  loader: ({ context, params }) => context.queryClient.ensureQueryData(chatQuery(params.characterId)),
+  component: ChatPage,
+});
+
+function ChatPage() {
+  const { characterId } = Route.useParams();
+  const { data } = useSuspenseQuery(chatQuery(characterId));
+  return <ChatWindow key={characterId} character={data.character} initial={data.messages} />;
+}
+
+function ChatWindow({ character, initial }: { character: Character; initial: UIMessage[] }) {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [text, setText] = useState("");
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: "/api/chat", headers: authHeaders, body: { characterId: character.id } }),
+    [character.id],
+  );
+  const { messages, sendMessage, status, stop, setMessages } = useChat({
+    id: character.id,
+    messages: initial,
+    transport,
+    onError: (e) => toast.error(e.message || "Something went wrong."),
+    onFinish: () => qc.invalidateQueries({ queryKey: ["messages", character.id] }),
+  });
+  const busy = status === "submitted" || status === "streaming";
+  const avatar = character.avatar_url ?? "/images/elara.jpg";
+
+  async function restart() {
+    if (!confirm("Start over? This clears this conversation.")) return;
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase.from("messages").delete().eq("character_id", character.id).eq("user_id", u.user!.id);
+    if (error) return toast.error("Couldn't clear the chat.");
+    setMessages([]);
+    qc.invalidateQueries({ queryKey: ["messages", character.id] });
+  }
+
+  async function remove() {
+    if (!confirm(`Delete ${character.name} forever?`)) return;
+    const { error } = await supabase.from("characters").delete().eq("id", character.id);
+    if (error) return toast.error("Couldn't delete.");
+    await qc.invalidateQueries({ queryKey: ["characters"] });
+    navigate({ to: "/characters" });
+  }
+
+  return (
+    <main className="mx-auto flex h-[calc(100vh-65px)] max-w-3xl flex-col px-4">
+      <div className="flex items-center gap-3 py-4">
+        <Button asChild variant="ghost" size="icon" className="rounded-full">
+          <Link to="/characters" aria-label="Back"><ArrowLeft className="h-5 w-5" /></Link>
+        </Button>
+        <img src={avatar} alt="" className="h-12 w-12 rounded-full object-cover shadow-soft" />
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-xl font-semibold leading-tight">{character.name}</div>
+          <div className="truncate text-sm text-muted-foreground">{character.tagline}</div>
+        </div>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={restart} aria-label="Start over">
+          <RotateCcw className="h-5 w-5" />
+        </Button>
+        {character.owner_id && (
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={remove} aria-label="Delete character">
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+
+      <Conversation className="flex-1 rounded-[2rem] border border-border bg-card/70">
+        <ConversationContent>
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center py-12 text-center">
+              <img src={avatar} alt={character.name} className="h-32 w-32 rounded-[1.75rem] object-cover shadow-soft" />
+              <p className="mt-4 max-w-sm text-muted-foreground">
+                Say hello to {character.name} — or describe a scene and start your story.
+              </p>
+            </div>
+          )}
+          {messages.map((m) => (
+            <Message key={m.id} from={m.role}>
+              {m.role === "assistant" && <img src={avatar} alt="" className="h-8 w-8 shrink-0 self-start rounded-full object-cover" />}
+              <MessageContent>
+                {m.parts.map((p, i) =>
+                  p.type === "text" ? <MessageResponse key={i}>{p.text}</MessageResponse> : null,
+                )}
+              </MessageContent>
+            </Message>
+          ))}
+          {status === "submitted" && (
+            <div className="flex items-center gap-3">
+              <img src={avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+              <Shimmer>{`${character.name} is thinking…`}</Shimmer>
+            </div>
+          )}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+
+      <div className="py-4">
+        <PromptInput
+          onSubmit={(msg) => {
+            const t = msg.text?.trim();
+            if (!t || busy) return;
+            sendMessage({ text: t });
+            setText("");
+          }}
+          className="rounded-[1.5rem] bg-card shadow-soft"
+        >
+          <PromptInputTextarea
+            autoFocus
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={`Message ${character.name}…`}
+          />
+          <PromptInputFooter className="justify-end">
+            <PromptInputSubmit status={status} onStop={stop} disabled={!busy && !text.trim()} />
+          </PromptInputFooter>
+        </PromptInput>
+      </div>
+    </main>
+  );
+}
