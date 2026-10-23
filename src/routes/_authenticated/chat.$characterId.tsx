@@ -68,7 +68,7 @@ function ChatWindow({ character, initial }: { character: Character; initial: UIM
     if (!confirm("Start over? This clears this conversation.")) return;
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("messages").delete().eq("character_id", character.id).eq("user_id", u.user!.id);
-    if (error) return toast.error("Couldn't clear the chat.");
+    if (error) { toast.error("Couldn't clear the chat."); return; }
     setMessages([]);
     qc.invalidateQueries({ queryKey: ["messages", character.id] });
   }
@@ -76,7 +76,7 @@ function ChatWindow({ character, initial }: { character: Character; initial: UIM
   async function remove() {
     if (!confirm(`Delete ${character.name} forever?`)) return;
     const { error } = await supabase.from("characters").delete().eq("id", character.id);
-    if (error) return toast.error("Couldn't delete.");
+    if (error) { toast.error("Couldn't delete."); return; }
     await qc.invalidateQueries({ queryKey: ["characters"] });
     navigate({ to: "/characters" });
   }

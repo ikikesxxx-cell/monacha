@@ -57,10 +57,10 @@ function CharactersPage() {
           <Plus className="h-10 w-10" />
           <span className="font-display text-lg font-semibold">Create a character</span>
         </Link>
-        {mine.map((c, i) => <Card key={c.id} c={c} tint={tints[i % 4]} />)}
+        {mine.map((c, i) => <Card key={c.id} c={c} tint={tints[i % 4]!} />)}
       </Section>
       <Section title="Starter characters">
-        {starters.map((c, i) => <Card key={c.id} c={c} tint={tints[(i + 1) % 4]} />)}
+        {starters.map((c, i) => <Card key={c.id} c={c} tint={tints[(i + 1) % 4]!} />)}
       </Section>
     </main>
   );

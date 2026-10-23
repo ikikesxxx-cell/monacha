@@ -62,7 +62,7 @@ function CreatePage() {
   }
 
   async function save() {
-    if (!name.trim() || !behavior.trim()) return toast.error("Give your character a name and a behavior.");
+    if (!name.trim() || !behavior.trim()) { toast.error("Give your character a name and a behavior."); return; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     const { data, error } = await supabase
@@ -71,7 +71,7 @@ function CreatePage() {
       .select("id")
       .single();
     setSaving(false);
-    if (error) return toast.error("Couldn't save the character.");
+    if (error) { toast.error("Couldn't save the character."); return; }
     await qc.invalidateQueries({ queryKey: ["characters"] });
     navigate({ to: "/chat/$characterId", params: { characterId: data.id } });
   }

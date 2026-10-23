@@ -70,7 +70,7 @@ export const Route = createFileRoute("/api/chat")({
           "Stay in character. If the setup describes a story, RPG or world, act as narrator/game master: invent new people, places and events as the story goes, and voice several characters when needed (put each speaker's name in bold before their lines).",
           "Follow the player's lead and their choices. Describe actions in *italics*.",
           profile?.display_name ? `The player's name is ${profile.display_name}.` : "",
-          LENGTHS[profile?.reply_length ?? "medium"] ?? LENGTHS.medium,
+          LENGTHS[profile?.reply_length ?? "medium"] ?? LENGTHS["medium"],
         ]
           .filter(Boolean)
           .join("\n\n");

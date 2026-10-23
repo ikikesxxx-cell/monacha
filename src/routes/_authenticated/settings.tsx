@@ -44,7 +44,7 @@ function SettingsPage() {
 
   async function save() {
     const { error } = await supabase.from("profiles").upsert({ id: data.id, display_name: name.trim(), reply_length: len });
-    if (error) return toast.error("Couldn't save settings.");
+    if (error) { toast.error("Couldn't save settings."); return; }
     qc.invalidateQueries({ queryKey: ["profile"] });
     toast.success("Settings saved");
   }
@@ -52,7 +52,7 @@ function SettingsPage() {
   async function clearChats() {
     if (!confirm("Delete all your chat history?")) return;
     const { error } = await supabase.from("messages").delete().eq("user_id", data.id);
-    if (error) return toast.error("Couldn't clear chats.");
+    if (error) { toast.error("Couldn't clear chats."); return; }
     qc.invalidateQueries({ queryKey: ["messages"] });
     toast.success("All chats cleared");
   }
