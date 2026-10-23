@@ -98,7 +98,9 @@ function CreatePage() {
               </button>
             ))}
           </div>
-          <Button onClick={generate} disabled={generating || photoPrompt.trim().length < 3} variant="secondary" className="w-full rounded-full">
+          <Label htmlFor="ref" className="pt-2">Or start from a real photo (the AI makes its own version)</Label>
+          <Input id="ref" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setReference(e.target.files?.[0] ?? null)} />
+          <Button onClick={generate} disabled={generating || (photoPrompt.trim().length < 3 && !reference)} variant="secondary" className="w-full rounded-full">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
             {generating ? "Creating photo…" : photo ? "Make another photo" : "Generate photo"}
           </Button>
