@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Images, Plus, Settings, Users } from "lucide-react";
+import { Camera, Images, Plus, Settings, Users } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export function AppHeader() {
@@ -19,6 +19,9 @@ export function AppHeader() {
           </Link>
           <Link to="/create" className={link} activeProps={active}>
             <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Create</span>
+          </Link>
+          <Link to="/studio" className={link} activeProps={active}>
+            <Camera className="h-4 w-4" /> <span className="hidden sm:inline">Studio</span>
           </Link>
           <Link to="/review" className={link} activeProps={active}>
             <Images className="h-4 w-4" /> <span className="hidden sm:inline">Review</span>

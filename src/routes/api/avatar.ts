@@ -23,7 +23,23 @@ export const Route = createFileRoute("/api/avatar")({
 
         const form = await request.formData();
         const prompt = String(form.get("prompt") ?? "").trim();
-        const reference = form.get("reference");
+        const change = String(form.get("change") ?? "").trim();
+        const base = String(form.get("base") ?? "");
+        let reference: unknown = form.get("reference");
+        let editing = false;
+        if (change && base) {
+          // Only allow editing the caller's own stored photos
+          const m = base.match(/\/avatars\/([^?]+)/);
+          const path = m ? decodeURIComponent(m[1]!) : "";
+          if (!path.startsWith(`${session.user.id}/`)) {
+            return Response.json({ error: "That photo can't be edited." }, { status: 403 });
+          }
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data: blob, error } = await supabaseAdmin.storage.from("avatars").download(path);
+          if (error || !blob) return Response.json({ error: "Couldn't load that photo." }, { status: 404 });
+          reference = new File([blob], "base.png", { type: "image/png" });
+          editing = true;
+        }
         const hasRef = reference instanceof File && reference.size > 0;
         if (prompt.length < 3 && !hasRef) {
           return Response.json({ error: "Describe the photo or add a real photo first." }, { status: 400 });
@@ -44,12 +60,17 @@ export const Route = createFileRoute("/api/avatar")({
           rows.filter((r) => r.status === "declined").map((r) => r.prompt),
         );
 
-        const subject = prompt || "the subject of the reference photo";
+        const subject = editing ? `${prompt ? prompt + " — " : ""}change: ${change}` : prompt || "the subject of the reference photo";
+        const fidelity =
+          "Follow every detail of the description exactly, especially skin tone, ethnicity, hair color, eye color, age and expression. Never lighten, darken or change the described skin tone.";
         const fullPrompt = [
-          hasRef
+          editing
+            ? `Edit this photo. Apply ONLY this change: ${change}. Keep everything else identical — same person or animal, face, skin tone, pose, lighting, background and photo style. Keep it ultra-realistic.`
+            : hasRef
             ? `Study the reference photo (subject, features, lighting, setting) and create a brand-new, original ultra-realistic portrait photograph inspired by it — not a copy. Subject: ${subject}.`
             : `Ultra realistic portrait photograph, natural lighting, sharp focus, looking at the camera, square framing. Subject: ${subject}.`,
-          learning,
+          editing ? "" : fidelity,
+          editing ? "" : learning,
         ]
           .filter(Boolean)
           .join(" ");

@@ -16,6 +16,7 @@ import { Route as AuthenticatedCharactersRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as ApiAvatarRouteImport } from './routes/api/avatar'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthenticatedChatCharacterIdRouteImport } from './routes/_authenticated/chat.$characterId'
@@ -54,6 +55,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiAvatarRoute = ApiAvatarRouteImport.update({
   id: '/api/avatar',
   path: '/api/avatar',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/create': typeof AuthenticatedCreateRoute
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/studio': typeof AuthenticatedStudioRoute
   '/api/avatar': typeof ApiAvatarRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/create': typeof AuthenticatedCreateRoute
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/studio': typeof AuthenticatedStudioRoute
   '/api/avatar': typeof ApiAvatarRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/studio': typeof AuthenticatedStudioRoute
   '/api/avatar': typeof ApiAvatarRoute
   '/api/chat': typeof ApiChatRoute
   '/_authenticated/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/review'
     | '/settings'
+    | '/studio'
     | '/api/avatar'
     | '/api/chat'
     | '/chat/$characterId'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/review'
     | '/settings'
+    | '/studio'
     | '/api/avatar'
     | '/api/chat'
     | '/chat/$characterId'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/create'
     | '/_authenticated/review'
     | '/_authenticated/settings'
+    | '/_authenticated/studio'
     | '/api/avatar'
     | '/api/chat'
     | '/_authenticated/chat/$characterId'
@@ -202,6 +214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/studio': {
+      id: '/_authenticated/studio'
+      path: '/studio'
+      fullPath: '/studio'
+      preLoaderRoute: typeof AuthenticatedStudioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/avatar': {
       id: '/api/avatar'
       path: '/api/avatar'
@@ -231,6 +250,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
   AuthenticatedChatCharacterIdRoute: typeof AuthenticatedChatCharacterIdRoute
 }
 
@@ -239,6 +259,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedStudioRoute: AuthenticatedStudioRoute,
   AuthenticatedChatCharacterIdRoute: AuthenticatedChatCharacterIdRoute,
 }
 

@@ -1,10 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Wand2, Loader2 } from "lucide-react";
+import { Wand2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { authHeaders } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,14 +18,10 @@ export const Route = createFileRoute("/_authenticated/create")({
       { property: "og:description", content: "Generate a realistic photo and write how your AI character behaves." },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { photo?: string } =>
+    typeof s["photo"] === "string" ? { photo: s["photo"] } : {},
   component: CreatePage,
 });
-
-const ideas = [
-  "a fluffy orange cat wearing a tiny knitted scarf",
-  "an elderly fisherman with a white beard on a misty dock",
-  "a young knight with freckles in silver armor",
-];
 
 function CreatePage() {
   const navigate = useNavigate();
@@ -34,32 +29,9 @@ function CreatePage() {
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [behavior, setBehavior] = useState("");
-  const [photoPrompt, setPhotoPrompt] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [reference, setReference] = useState<File | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const { photo: photoParam } = Route.useSearch();
+  const photo = photoParam ?? null;
   const [saving, setSaving] = useState(false);
-
-  async function generate() {
-    setGenerating(true);
-    try {
-      const form = new FormData();
-      form.set("prompt", photoPrompt);
-      if (reference) form.set("reference", reference);
-      const res = await fetch("/api/avatar", {
-        method: "POST",
-        headers: await authHeaders(),
-        body: form,
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Photo generation failed.");
-      setPhoto(json.url);
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setGenerating(false);
-    }
-  }
 
   async function save() {
     if (!name.trim() || !behavior.trim()) { toast.error("Give your character a name and a behavior."); return; }
@@ -84,27 +56,15 @@ function CreatePage() {
             <img src={photo} alt="Character" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center p-6 text-center text-accent-foreground">
-              {generating ? <Loader2 className="h-10 w-10 animate-spin" /> : "Your character's photo appears here"}
+              No photo yet
             </div>
           )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="pp">Describe the photo (human, animal, anything)</Label>
-          <Textarea id="pp" value={photoPrompt} onChange={(e) => setPhotoPrompt(e.target.value)} placeholder={ideas[0]} rows={3} />
-          <div className="flex flex-wrap gap-1.5">
-            {ideas.map((i) => (
-              <button key={i} type="button" onClick={() => setPhotoPrompt(i)} className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground hover:text-foreground">
-                {i}
-              </button>
-            ))}
-          </div>
-          <Label htmlFor="ref" className="pt-2">Or start from a real photo (the AI makes its own version)</Label>
-          <Input id="ref" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setReference(e.target.files?.[0] ?? null)} />
-          <Button onClick={generate} disabled={generating || (photoPrompt.trim().length < 3 && !reference)} variant="secondary" className="w-full rounded-full">
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            {generating ? "Creating photo…" : photo ? "Make another photo" : "Generate photo"}
-          </Button>
-        </div>
+        <Button asChild variant="secondary" className="w-full rounded-full">
+          <Link to="/studio">
+            <Wand2 className="h-4 w-4" /> {photo ? "Make a different photo" : "Open photo studio"}
+          </Link>
+        </Button>
       </div>
 
       <div className="space-y-5 rounded-[2rem] border border-border bg-card/90 p-6 shadow-soft">
