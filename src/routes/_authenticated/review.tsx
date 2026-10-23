@@ -46,7 +46,7 @@ function ReviewPage() {
   async function decide(id: string, status: "accepted" | "declined") {
     const now = new Date().toISOString();
     const { error } = await db.from("photo_generations").update({ status, reviewed_at: now }).eq("id", id);
-    if (error) return toast.error("Couldn't save your choice.");
+    if (error) { toast.error("Couldn't save your choice."); return; }
     await db.from("profiles").update({ last_review_at: now }).eq("id", data.userId);
     qc.invalidateQueries({ queryKey: ["review"] });
   }

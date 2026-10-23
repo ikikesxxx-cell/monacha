@@ -3,6 +3,8 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Character } from "@/lib/api";
+import { isReviewDue } from "@/lib/photo-learning";
+import { reviewQuery } from "./review";
 
 export const charactersQuery = queryOptions({
   queryKey: ["characters"],
@@ -22,7 +24,11 @@ export const Route = createFileRoute("/_authenticated/characters")({
       { property: "og:description", content: "Pick an AI character to chat with or create your own." },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(charactersQuery),
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(charactersQuery),
+      context.queryClient.ensureQueryData(reviewQuery).catch(() => null),
+    ]),
   component: CharactersPage,
 });
 
@@ -30,10 +36,18 @@ const tints = ["bg-peach", "bg-mint", "bg-lavender", "bg-butter"];
 
 function CharactersPage() {
   const { data } = useSuspenseQuery(charactersQuery);
+  const { data: review } = useSuspenseQuery(reviewQuery);
+  const due = isReviewDue(review.lastReviewAt, review.pending.length);
   const mine = data.filter((c) => c.owner_id);
   const starters = data.filter((c) => !c.owner_id);
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
+      {due && (
+        <Link to="/review" className="mb-6 flex items-center justify-between gap-4 rounded-[1.5rem] bg-butter px-5 py-4 shadow-soft">
+          <span className="font-semibold">Weekly photo review: {review.pending.length} new photos are waiting for your verdict.</span>
+          <span className="rounded-full bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground">Review</span>
+        </Link>
+      )}
       <h1 className="text-4xl font-semibold">Who do you want to talk to?</h1>
       <Section title="Your creations">
         <Link
@@ -43,10 +57,10 @@ function CharactersPage() {
           <Plus className="h-10 w-10" />
           <span className="font-display text-lg font-semibold">Create a character</span>
         </Link>
-        {mine.map((c, i) => <Card key={c.id} c={c} tint={tints[i % 4]} />)}
+        {mine.map((c, i) => <Card key={c.id} c={c} tint={tints[i % 4]!} />)}
       </Section>
       <Section title="Starter characters">
-        {starters.map((c, i) => <Card key={c.id} c={c} tint={tints[(i + 1) % 4]} />)}
+        {starters.map((c, i) => <Card key={c.id} c={c} tint={tints[(i + 1) % 4]!} />)}
       </Section>
     </main>
   );

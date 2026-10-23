@@ -82,23 +82,59 @@ export type Database = {
           },
         ]
       }
+      photo_generations: {
+        Row: {
+          created_at: string
+          from_reference: boolean
+          id: string
+          prompt: string
+          reviewed_at: string | null
+          status: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_reference?: boolean
+          id?: string
+          prompt: string
+          reviewed_at?: string | null
+          status?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_reference?: boolean
+          id?: string
+          prompt?: string
+          reviewed_at?: string | null
+          status?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           display_name: string | null
           id: string
+          last_review_at: string | null
           reply_length: string
         }
         Insert: {
           created_at?: string
           display_name?: string | null
           id: string
+          last_review_at?: string | null
           reply_length?: string
         }
         Update: {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_review_at?: string | null
           reply_length?: string
         }
         Relationships: []

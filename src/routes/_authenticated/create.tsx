@@ -36,16 +36,20 @@ function CreatePage() {
   const [behavior, setBehavior] = useState("");
   const [photoPrompt, setPhotoPrompt] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [reference, setReference] = useState<File | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function generate() {
     setGenerating(true);
     try {
+      const form = new FormData();
+      form.set("prompt", photoPrompt);
+      if (reference) form.set("reference", reference);
       const res = await fetch("/api/avatar", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-        body: JSON.stringify({ prompt: photoPrompt }),
+        headers: await authHeaders(),
+        body: form,
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Photo generation failed.");
@@ -58,7 +62,7 @@ function CreatePage() {
   }
 
   async function save() {
-    if (!name.trim() || !behavior.trim()) return toast.error("Give your character a name and a behavior.");
+    if (!name.trim() || !behavior.trim()) { toast.error("Give your character a name and a behavior."); return; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     const { data, error } = await supabase
@@ -67,7 +71,7 @@ function CreatePage() {
       .select("id")
       .single();
     setSaving(false);
-    if (error) return toast.error("Couldn't save the character.");
+    if (error) { toast.error("Couldn't save the character."); return; }
     await qc.invalidateQueries({ queryKey: ["characters"] });
     navigate({ to: "/chat/$characterId", params: { characterId: data.id } });
   }
@@ -94,7 +98,9 @@ function CreatePage() {
               </button>
             ))}
           </div>
-          <Button onClick={generate} disabled={generating || photoPrompt.trim().length < 3} variant="secondary" className="w-full rounded-full">
+          <Label htmlFor="ref" className="pt-2">Or start from a real photo (the AI makes its own version)</Label>
+          <Input id="ref" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setReference(e.target.files?.[0] ?? null)} />
+          <Button onClick={generate} disabled={generating || (photoPrompt.trim().length < 3 && !reference)} variant="secondary" className="w-full rounded-full">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
             {generating ? "Creating photo…" : photo ? "Make another photo" : "Generate photo"}
           </Button>
