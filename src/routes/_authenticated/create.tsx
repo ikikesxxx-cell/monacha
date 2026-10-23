@@ -36,16 +36,20 @@ function CreatePage() {
   const [behavior, setBehavior] = useState("");
   const [photoPrompt, setPhotoPrompt] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [reference, setReference] = useState<File | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function generate() {
     setGenerating(true);
     try {
+      const form = new FormData();
+      form.set("prompt", photoPrompt);
+      if (reference) form.set("reference", reference);
       const res = await fetch("/api/avatar", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-        body: JSON.stringify({ prompt: photoPrompt }),
+        headers: await authHeaders(),
+        body: form,
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Photo generation failed.");
