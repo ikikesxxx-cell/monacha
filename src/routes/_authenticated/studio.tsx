@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/studio")({
+  validateSearch: (s: Record<string, unknown>): { photo?: string } =>
+    typeof s["photo"] === "string" ? { photo: s["photo"] } : {},
   head: () => ({
     meta: [
       { title: "Photo studio — Hearthtalk" },
@@ -28,10 +30,11 @@ const ideas = [
 
 function StudioPage() {
   const navigate = useNavigate();
+  const { photo: photoParam } = Route.useSearch();
   const [prompt, setPrompt] = useState("");
   const [reference, setReference] = useState<File | null>(null);
   const [change, setChange] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<string[]>(photoParam ? [photoParam] : []);
   const [busy, setBusy] = useState(false);
   const photo = history[history.length - 1] ?? null;
 
