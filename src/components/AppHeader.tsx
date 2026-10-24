@@ -23,6 +23,9 @@ export function AppHeader() {
           <Link to="/studio" className={link} activeProps={active}>
             <Camera className="h-4 w-4" /> <span className="hidden sm:inline">Studio</span>
           </Link>
+          <Link to="/gallery" className={link} activeProps={active}>
+            <Library className="h-4 w-4" /> <span className="hidden sm:inline">Gallery</span>
+          </Link>
           <Link to="/review" className={link} activeProps={active}>
             <Images className="h-4 w-4" /> <span className="hidden sm:inline">Review</span>
           </Link>
