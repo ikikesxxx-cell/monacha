@@ -59,10 +59,13 @@ export const Route = createFileRoute("/api/character-helper")({
                 : "The helper couldn't write a draft. Please try again.";
           return Response.json({ error: msg }, { status: upstream.status });
         }
-        const json = (await upstream.json()) as { output_text?: string };
+        const json = (await upstream.json()) as {
+          output?: { type: string; content?: { type: string; text?: string }[] }[];
+        };
+        const text = json.output?.find((o) => o.type === "message")?.content?.find((c) => c.type === "output_text")?.text;
         let draft: { name: string; tagline: string; behavior: string };
         try {
-          draft = JSON.parse(json.output_text ?? "");
+          draft = JSON.parse(text ?? "");
         } catch {
           return Response.json({ error: "The helper gave a broken answer. Please try again." }, { status: 502 });
         }
