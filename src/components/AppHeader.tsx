@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Camera, Images, Plus, Settings, Users } from "lucide-react";
+import { Camera, Images, Library, Plus, Settings, Users } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export function AppHeader() {
