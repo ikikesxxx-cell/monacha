@@ -33,6 +33,30 @@ function CreatePage() {
   const { photo: photoParam } = Route.useSearch();
   const photo = photoParam ?? null;
   const [saving, setSaving] = useState(false);
+  const [idea, setIdea] = useState("");
+  const [helping, setHelping] = useState(false);
+
+  async function askHelper() {
+    if (idea.trim().length < 3) { toast.error("Describe your character idea first."); return; }
+    setHelping(true);
+    try {
+      const res = await fetch("/api/character-helper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+        body: JSON.stringify({ idea }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "The helper couldn't write a draft.");
+      setName(json.name ?? "");
+      setTagline(json.tagline ?? "");
+      setBehavior(json.behavior ?? "");
+      toast.success("Draft ready — change anything you like before saving.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setHelping(false);
+    }
+  }
 
   async function save() {
     if (!name.trim() || !behavior.trim()) { toast.error("Give your character a name and a behavior."); return; }
@@ -70,6 +94,26 @@ function CreatePage() {
 
       <div className="space-y-5 rounded-[2rem] border border-border bg-card/90 p-6 shadow-soft">
         <h1 className="text-3xl font-semibold">Create your AI</h1>
+        <div className="space-y-3 rounded-3xl bg-muted/60 p-4">
+          <Label htmlFor="idea">Not sure where to start? Describe your idea in one sentence</Label>
+          <Textarea
+            id="idea"
+            rows={2}
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            placeholder="a grumpy cat who rules a castle…"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full rounded-full"
+            disabled={helping || idea.trim().length < 3}
+            onClick={askHelper}
+          >
+            {helping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {helping ? "The AI is writing…" : "Let the AI fill in everything"}
+          </Button>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="n">Name</Label>
           <Input id="n" value={name} onChange={(e) => setName(e.target.value)} placeholder="Sir Pemberton" />
