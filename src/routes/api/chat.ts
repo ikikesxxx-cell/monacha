@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { UIMessage } from "ai";
+import { memoryContext, RECENT_MESSAGE_COUNT } from "@/lib/conversation-memory";
 
 const LENGTHS: Record<string, string> = {
   short: "Keep replies short: 1-3 sentences.",
@@ -52,7 +53,8 @@ export const Route = createFileRoute("/api/chat")({
         if (!apiKey) return new Response("AI is not configured.", { status: 500 });
 
         const { createOpenAI } = await import("@ai-sdk/openai");
-        const { streamText, convertToModelMessages } = await import("ai");
+        const { streamText, convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse } = await import("ai");
+        const { refreshStoryMemory } = await import("@/lib/server/story-memory");
         const { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader } =
           await import("@/lib/server/run-id");
 
@@ -64,6 +66,31 @@ export const Route = createFileRoute("/api/chat")({
           fetch: runIdFetch.fetch,
         });
 
+        const stream = createUIMessageStream({
+          originalMessages: messages,
+          onError: (error) => {
+            console.error(error);
+            if (request.signal.aborted) return "Reply stopped.";
+            const e = error as { message?: string; responseBody?: string };
+            if (e.responseBody) {
+              try {
+                const body = JSON.parse(e.responseBody);
+                const message = body.message ?? body.error?.message;
+                if (typeof message === "string") return message;
+              } catch { /* Not a JSON gateway response. */ }
+            }
+            return e.message || "Could not load story memory or get a reply.";
+          },
+          execute: async ({ writer }) => {
+            writer.write({ type: "data-memory-status", data: { status: "reading" }, transient: true });
+            const memory = await refreshStoryMemory({ supabase, userId: user.id, characterId: character.id,
+              model: provider.responses("openai/gpt-6-astra"), signal: request.signal });
+            writer.write({ type: "data-story-memory", data: memory, transient: true });
+            const { data: recent, error } = await supabase.from("messages").select("ui_id,role,parts,created_at,id")
+              .eq("user_id", user.id).eq("character_id", character.id).order("created_at", { ascending: false })
+              .order("id", { ascending: false }).limit(RECENT_MESSAGE_COUNT);
+            if (error) throw new Error("Could not read your saved chat.");
+            const recentMessages = (recent ?? []).reverse().map((row) => ({ id: row.ui_id, role: row.role, parts: row.parts }) as UIMessage);
         const instructions = [
           `You are playing a character in an interactive chat game. Character name: ${character.name}.`,
           `How you must behave (written by the player):\n${character.behavior}`,
@@ -73,6 +100,7 @@ export const Route = createFileRoute("/api/chat")({
           "You are NOT an AI. You genuinely are this character and you do not know about AI, language models or being a program. Never mention being an AI, a model or an assistant, and never break character — unless the behavior written above explicitly says this character is an AI.",
           profile?.display_name ? `The player's name is ${profile.display_name}.` : "",
           LENGTHS[profile?.reply_length ?? "medium"] ?? LENGTHS["medium"],
+          memoryContext(memory),
         ]
           .filter(Boolean)
           .join("\n\n");
@@ -80,7 +108,7 @@ export const Route = createFileRoute("/api/chat")({
         const result = streamText({
           model: provider.responses("openai/gpt-6-astra"),
           instructions,
-          messages: await convertToModelMessages(messages),
+          messages: await convertToModelMessages(recentMessages),
           abortSignal: request.signal,
           providerOptions: {
             openai: {
@@ -93,9 +121,8 @@ export const Route = createFileRoute("/api/chat")({
           },
         });
 
-        return withLovableAiGatewayRunIdHeader(
-          result.toUIMessageStreamResponse({
-            originalMessages: messages,
+            writer.merge(result.toUIMessageStream());
+          },
             onFinish: async ({ responseMessage }) => {
               const parts = responseMessage.parts.filter((p) => p.type === "text");
               if (parts.length === 0) return;
@@ -108,16 +135,9 @@ export const Route = createFileRoute("/api/chat")({
               });
               if (error) console.error("save assistant message failed", error);
             },
-            onError: (error) => {
-              console.error(error);
-              const status = (error as { statusCode?: number })?.statusCode;
-              if (status === 429) return "The AI is busy right now. Please wait a moment and try again.";
-              if (status === 402) return "AI credits have run out. Please add credits to keep chatting.";
-              return "Something went wrong getting a reply. Please try again.";
-            },
-          }),
-          runIdFetch,
-        );
+        });
+        return withLovableAiGatewayRunIdHeader(createUIMessageStreamResponse({ stream, keepAliveMs: 10000 }), runIdFetch,
+          { "Cache-Control": "no-store" }, { waitForUpstreamHeaders: false });
       },
     },
   },

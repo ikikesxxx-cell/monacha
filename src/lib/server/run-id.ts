@@ -65,6 +65,7 @@ export async function withLovableAiGatewayRunIdHeader(
   response: Response,
   gateway: { getRunId: () => string | undefined; waitForRunId: () => Promise<string | undefined> },
   init?: HeadersInit,
+  options: { waitForUpstreamHeaders?: boolean } = {},
 ) {
   if (!response.body) {
     const runId = gateway.getRunId();
@@ -75,7 +76,7 @@ export async function withLovableAiGatewayRunIdHeader(
   }
   const reader = response.body.getReader();
   const firstChunk = reader.read();
-  const runId = await gateway.waitForRunId();
+  const runId = options.waitForUpstreamHeaders === false ? gateway.getRunId() : await gateway.waitForRunId();
   const headers = getLovableAiGatewayResponseHeaders(undefined, response.headers);
   new Headers(init).forEach((value, name) => headers.set(name, value));
   if (runId) headers.set(LOVABLE_AIG_RUN_ID_HEADER, runId);
