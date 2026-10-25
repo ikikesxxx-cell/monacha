@@ -58,7 +58,10 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
   const [memory, setMemory] = useState(initialMemory);
   const [readingMemory, setReadingMemory] = useState(false);
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat", headers: authHeaders, body: { characterId: character.id } }),
+    () => new DefaultChatTransport({
+      api: "/api/chat", headers: authHeaders,
+      prepareSendMessagesRequest: ({ messages }) => ({ body: { characterId: character.id, messages: messages.slice(-1) } }),
+    }),
     [character.id],
   );
   const { messages, sendMessage, status, stop, setMessages } = useChat({
