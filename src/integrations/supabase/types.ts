@@ -44,6 +44,44 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_memories: {
+        Row: {
+          character_id: string
+          facts: Json
+          last_message_at: string | null
+          last_message_id: string | null
+          summary: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          facts?: Json
+          last_message_at?: string | null
+          last_message_id?: string | null
+          summary?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          facts?: Json
+          last_message_at?: string | null
+          last_message_id?: string | null
+          summary?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_memories_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           character_id: string
