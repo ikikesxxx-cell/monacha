@@ -16,6 +16,8 @@ export const Route = createFileRoute("/_authenticated/create")({
       { title: "Create a character — Hearthtalk" },
       { name: "description", content: "Generate a realistic photo and write how your AI character behaves." },
       { property: "og:title", content: "Create a character — Hearthtalk" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:description", content: "Generate a realistic photo and write how your AI character behaves." },
     ],
   }),

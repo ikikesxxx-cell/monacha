@@ -32,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/review")({
       { title: "Photo review — Hearthtalk" },
       { name: "description", content: "Accept or decline generated photos so future photos get better." },
       { property: "og:title", content: "Photo review — Hearthtalk" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:description", content: "Accept or decline generated photos so future photos get better." },
     ],
   }),

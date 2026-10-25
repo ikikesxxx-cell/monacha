@@ -22,6 +22,8 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { title: "Settings — Hearthtalk" },
       { name: "description", content: "Change your name, reply length and account options." },
       { property: "og:title", content: "Settings — Hearthtalk" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:description", content: "Change your name, reply length and account options." },
     ],
   }),
