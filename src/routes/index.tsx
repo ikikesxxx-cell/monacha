@@ -14,6 +14,8 @@ export const Route = createFileRoute("/")({
         content: "Design AI characters with realistic generated photos, tell them how to behave, and play stories together.",
       },
       { property: "og:title", content: "Hearthtalk — make your own AI characters and chat" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content: "Design AI characters with realistic generated photos, tell them how to behave, and play stories together.",

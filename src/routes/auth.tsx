@@ -10,6 +10,8 @@ export const Route = createFileRoute("/auth")({
       { title: "Sign in — Hearthtalk" },
       { name: "description", content: "Sign in with Google to chat with your AI characters." },
       { property: "og:title", content: "Sign in — Hearthtalk" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:description", content: "Sign in with Google to chat with your AI characters." },
     ],
   }),

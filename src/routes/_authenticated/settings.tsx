@@ -22,6 +22,8 @@ export const Route = createFileRoute("/_authenticated/settings")({
       { title: "Settings — Hearthtalk" },
       { name: "description", content: "Change your name, reply length and account options." },
       { property: "og:title", content: "Settings — Hearthtalk" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:description", content: "Change your name, reply length and account options." },
     ],
   }),
@@ -50,10 +52,10 @@ function SettingsPage() {
   }
 
   async function clearChats() {
-    if (!confirm("Delete all your chat history?")) return;
+    if (!confirm("Delete all your chat history and story memories?")) return;
     const { error } = await supabase.from("messages").delete().eq("user_id", data.id);
     if (error) { toast.error("Couldn't clear chats."); return; }
-    qc.invalidateQueries({ queryKey: ["messages"] });
+    qc.removeQueries({ queryKey: ["messages"] });
     toast.success("All chats cleared");
   }
 

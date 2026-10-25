@@ -12,18 +12,21 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
+import { StoryMemory } from "@/components/StoryMemory";
+import { EMPTY_MEMORY, normalizeMemory, type StoryMemory as Memory } from "@/lib/conversation-memory";
 
 const chatQuery = (id: string) =>
   queryOptions({
     queryKey: ["messages", id],
     queryFn: async () => {
-      const [{ data: c, error }, { data: rows }] = await Promise.all([
+      const [{ data: c, error }, { data: rows }, { data: memory }] = await Promise.all([
         supabase.from("characters").select("*").eq("id", id).single(),
         supabase.from("messages").select("ui_id,role,parts").eq("character_id", id).order("created_at"),
+        supabase.from("conversation_memories").select("facts,summary").eq("character_id", id).maybeSingle(),
       ]);
       if (error) throw error;
       const messages = (rows ?? []).map((r) => ({ id: r.ui_id, role: r.role, parts: r.parts }) as UIMessage);
-      return { character: c as Character, messages };
+      return { character: c as Character, messages, memory: memory ? normalizeMemory(memory) : EMPTY_MEMORY };
     },
   });
 
@@ -34,6 +37,8 @@ export const Route = createFileRoute("/_authenticated/chat/$characterId")({
       { name: "description", content: "Chat and play stories with your AI character." },
       { property: "og:title", content: "Chat — Hearthtalk" },
       { property: "og:description", content: "Chat and play stories with your AI character." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   loader: ({ context, params }) => context.queryClient.ensureQueryData(chatQuery(params.characterId)),
@@ -43,33 +48,44 @@ export const Route = createFileRoute("/_authenticated/chat/$characterId")({
 function ChatPage() {
   const { characterId } = Route.useParams();
   const { data } = useSuspenseQuery(chatQuery(characterId));
-  return <ChatWindow key={characterId} character={data.character} initial={data.messages} />;
+  return <ChatWindow key={characterId} character={data.character} initial={data.messages} initialMemory={data.memory} />;
 }
 
-function ChatWindow({ character, initial }: { character: Character; initial: UIMessage[] }) {
+function ChatWindow({ character, initial, initialMemory }: { character: Character; initial: UIMessage[]; initialMemory: Memory }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [text, setText] = useState("");
+  const [memory, setMemory] = useState(initialMemory);
+  const [readingMemory, setReadingMemory] = useState(false);
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat", headers: authHeaders, body: { characterId: character.id } }),
+    () => new DefaultChatTransport({
+      api: "/api/chat", headers: authHeaders,
+      prepareSendMessagesRequest: ({ messages }) => ({ body: { characterId: character.id, messages: messages.slice(-1) } }),
+    }),
     [character.id],
   );
   const { messages, sendMessage, status, stop, setMessages } = useChat({
     id: character.id,
     messages: initial,
     transport,
-    onError: (e) => toast.error(e.message || "Something went wrong."),
+    onData: (part) => {
+      if (part.type === "data-memory-status") setReadingMemory(true);
+      if (part.type === "data-story-memory") { setMemory(normalizeMemory(part.data)); setReadingMemory(false); }
+    },
+    onError: (e) => { setReadingMemory(false); toast.error(e.message || "Something went wrong."); },
     onFinish: () => qc.invalidateQueries({ queryKey: ["messages", character.id] }),
   });
   const busy = status === "submitted" || status === "streaming";
   const avatar = character.avatar_url ?? "/images/elara.jpg";
 
   async function restart() {
-    if (!confirm("Start over? This clears this conversation.")) return;
+    if (!confirm("Start over? This clears this conversation and its story memory.")) return;
     const { data: u } = await supabase.auth.getUser();
-    const { error } = await supabase.from("messages").delete().eq("character_id", character.id).eq("user_id", u.user!.id);
+    if (!u.user) { toast.error("Please sign in again."); return; }
+    const { error } = await supabase.from("messages").delete().eq("character_id", character.id).eq("user_id", u.user.id);
     if (error) { toast.error("Couldn't clear the chat."); return; }
     setMessages([]);
+    setMemory(EMPTY_MEMORY);
     qc.invalidateQueries({ queryKey: ["messages", character.id] });
   }
 
@@ -92,11 +108,12 @@ function ChatWindow({ character, initial }: { character: Character; initial: UIM
           <div className="font-display text-xl font-semibold leading-tight">{character.name}</div>
           <div className="truncate text-sm text-muted-foreground">{character.tagline}</div>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={restart} aria-label="Start over">
+        <StoryMemory memory={memory} />
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={restart} disabled={busy} aria-label="Start over">
           <RotateCcw className="h-5 w-5" />
         </Button>
         {character.owner_id && (
-          <Button variant="ghost" size="icon" className="rounded-full" onClick={remove} aria-label="Delete character">
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={remove} disabled={busy} aria-label="Delete character">
             <Trash2 className="h-5 w-5" />
           </Button>
         )}
@@ -125,7 +142,7 @@ function ChatWindow({ character, initial }: { character: Character; initial: UIM
           {status === "submitted" && (
             <div className="flex items-center gap-3">
               <img src={avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
-              <Shimmer>{`${character.name} is thinking…`}</Shimmer>
+              <Shimmer>{readingMemory ? "Reading story memory…" : `${character.name} is thinking…`}</Shimmer>
             </div>
           )}
         </ConversationContent>

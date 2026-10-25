@@ -26,6 +26,8 @@ export const Route = createFileRoute("/_authenticated/gallery")({
       { title: "My photos — Hearthtalk" },
       { name: "description", content: "Every photo you ever made — view it, change it, or use it for a character." },
       { property: "og:title", content: "My photos — Hearthtalk" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:description", content: "Every photo you ever made — view it, change it, or use it for a character." },
     ],
   }),

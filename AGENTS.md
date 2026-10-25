@@ -12,3 +12,4 @@
 - AI chat streams through server route src/routes/api/chat.ts and photo generation through src/routes/api/avatar.ts; both verify the bearer token via src/lib/server/user.ts — server routes don't get serverFn auth middleware.
 - Avatar photos live in a private storage bucket served by long-lived signed URLs — the workspace blocks public buckets.
 - Photo "learning" is prompt steering from the user's accepted/declined generations (src/lib/photo-learning.ts), not model training.
+- Chat memory is a private per-user/per-character structured summary incrementally extracted from saved messages before replying; replay only recent saved text alongside memory, and couple memory deletion to message deletion with a database trigger and checkpoint foreign key to prevent stale resets.
