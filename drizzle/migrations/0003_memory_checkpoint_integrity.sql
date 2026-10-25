@@ -1,0 +1,1 @@
+ALTER TABLE public.conversation_memories ADD CONSTRAINT conversation_memory_checkpoint_fkey FOREIGN KEY (last_message_id) REFERENCES public.messages(id) ON DELETE CASCADE;

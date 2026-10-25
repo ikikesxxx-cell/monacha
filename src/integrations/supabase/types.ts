@@ -80,6 +80,13 @@ export type Database = {
             referencedRelation: "characters"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "conversation_memory_checkpoint_fkey"
+            columns: ["last_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
         ]
       }
       messages: {
