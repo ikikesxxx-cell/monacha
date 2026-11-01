@@ -16,30 +16,39 @@ export type Database = {
     Tables: {
       characters: {
         Row: {
+          avatar_kind: string
           avatar_url: string | null
           behavior: string
           created_at: string
           id: string
+          music: Json
           name: string
           owner_id: string | null
+          rules: string
           tagline: string
         }
         Insert: {
+          avatar_kind?: string
           avatar_url?: string | null
           behavior: string
           created_at?: string
           id?: string
+          music?: Json
           name: string
           owner_id?: string | null
+          rules?: string
           tagline?: string
         }
         Update: {
+          avatar_kind?: string
           avatar_url?: string | null
           behavior?: string
           created_at?: string
           id?: string
+          music?: Json
           name?: string
           owner_id?: string | null
+          rules?: string
           tagline?: string
         }
         Relationships: []
@@ -132,6 +141,7 @@ export type Database = {
           created_at: string
           from_reference: boolean
           id: string
+          parent_id: string | null
           prompt: string
           reviewed_at: string | null
           status: string
@@ -142,6 +152,7 @@ export type Database = {
           created_at?: string
           from_reference?: boolean
           id?: string
+          parent_id?: string | null
           prompt: string
           reviewed_at?: string | null
           status?: string
@@ -152,13 +163,22 @@ export type Database = {
           created_at?: string
           from_reference?: boolean
           id?: string
+          parent_id?: string | null
           prompt?: string
           reviewed_at?: string | null
           status?: string
           url?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "photo_generations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "photo_generations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -166,6 +186,7 @@ export type Database = {
           display_name: string | null
           id: string
           last_review_at: string | null
+          music_enabled: boolean
           reply_length: string
         }
         Insert: {
@@ -173,6 +194,7 @@ export type Database = {
           display_name?: string | null
           id: string
           last_review_at?: string | null
+          music_enabled?: boolean
           reply_length?: string
         }
         Update: {
@@ -180,6 +202,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_review_at?: string | null
+          music_enabled?: boolean
           reply_length?: string
         }
         Relationships: []

@@ -29,6 +29,13 @@
       "when": 1792915118988,
       "tag": "0003_memory_checkpoint_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793516207896,
+      "tag": "0004_photo_versions_rules_music",
+      "breakpoints": true
     }
   ]
 }
