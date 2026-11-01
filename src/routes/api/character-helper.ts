@@ -11,7 +11,7 @@ export const Route = createFileRoute("/api/character-helper")({
         const session = await getRequestUser(request);
         if (!session) return Response.json({ error: "Please sign in again." }, { status: 401 });
 
-        const body = (await request.json().catch(() => null)) as { idea?: string } | null;
+        const body = (await request.json().catch(() => null)) as { idea?: string; brainstorm?: boolean } | null;
         const idea = body?.idea?.trim() ?? "";
         if (idea.length < 3) return Response.json({ error: "Describe your character idea first." }, { status: 400 });
 
@@ -27,7 +27,11 @@ export const Route = createFileRoute("/api/character-helper")({
               "You help a player design a character for an interactive chat game. From their short idea, invent: " +
               "a fitting name, a one-line tagline, and a 'behavior' text of 2-4 short paragraphs that tells the game AI how to play this character " +
               "(personality, way of talking, world or setting; if the idea sounds like a story or RPG, describe the AI as narrator who invents people and events). " +
-              "Write the behavior in second person, addressed to the character, e.g. 'You are Sir Pemberton, a grumpy cat...'. Keep it vivid but concise.",
+              "Write the behavior in second person, addressed to the character, e.g. 'You are Sir Pemberton, a grumpy cat...'. Keep it vivid but concise. " +
+              "Also write 'rules': short scenario rules / things that can never happen in this story (empty string if none are implied). " +
+              (body?.brainstorm
+                ? "The player is unsure how to describe their idea. In 'questions', ask 2-4 short friendly questions about what is still missing to make it perfect."
+                : "Set 'questions' to an empty array unless something essential is missing."),
             input: idea,
             reasoning: { effort: "low" },
             text: {
@@ -41,8 +45,10 @@ export const Route = createFileRoute("/api/character-helper")({
                     name: { type: "string" },
                     tagline: { type: "string" },
                     behavior: { type: "string" },
+                    rules: { type: "string" },
+                    questions: { type: "array", items: { type: "string" } },
                   },
-                  required: ["name", "tagline", "behavior"],
+                  required: ["name", "tagline", "behavior", "rules", "questions"],
                   additionalProperties: false,
                 },
               },
