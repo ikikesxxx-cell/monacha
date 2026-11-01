@@ -2,9 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { PhotoWindow } from "@/components/PhotoWindow";
+import { detectMood, music, trackFor } from "@/lib/music";
 import { toast } from "sonner";
-import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { authHeaders, type Character } from "@/lib/api";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
@@ -76,7 +78,15 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
     onFinish: () => qc.invalidateQueries({ queryKey: ["messages", character.id] }),
   });
   const busy = status === "submitted" || status === "streaming";
-  const avatar = character.avatar_url ?? "/images/elara.jpg";
+  const entity = character.avatar_kind === "none";
+  const avatar = entity ? null : (character.avatar_url ?? "/images/elara.jpg");
+  const [pip, setPip] = useState(false);
+  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  const lastText = lastAssistant?.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ") ?? "";
+  useEffect(() => {
+    if (status === "streaming") return;
+    music.set({ track: trackFor(character.music, detectMood(lastText)) });
+  }, [lastText, status, character.music]);
 
   async function restart() {
     if (!confirm("Start over? This clears this conversation and its story memory.")) return;
@@ -103,7 +113,13 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
         <Button asChild variant="ghost" size="icon" className="rounded-full">
           <Link to="/characters" aria-label="Back"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <img src={avatar} alt="" className="h-12 w-12 rounded-full object-cover shadow-soft" />
+        {avatar ? (
+          <button type="button" onClick={() => setPip(true)} aria-label="Open photo">
+            <img src={avatar} alt="" className="h-12 w-12 rounded-full object-cover shadow-soft" />
+          </button>
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-lavender shadow-soft"><Sparkles className="h-5 w-5 text-primary" /></div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="font-display text-xl font-semibold leading-tight">{character.name}</div>
           <div className="truncate text-sm text-muted-foreground">{character.tagline}</div>
@@ -123,7 +139,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
         <ConversationContent>
           {messages.length === 0 && (
             <div className="flex flex-col items-center py-12 text-center">
-              <img src={avatar} alt={character.name} className="h-32 w-32 rounded-[1.75rem] object-cover shadow-soft" />
+              {avatar && <img src={avatar} alt={character.name} className="h-32 w-32 rounded-[1.75rem] object-cover shadow-soft" />}
               <p className="mt-4 max-w-sm text-muted-foreground">
                 Say hello to {character.name} — or describe a scene and start your story.
               </p>
@@ -131,7 +147,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
           )}
           {messages.map((m) => (
             <Message key={m.id} from={m.role}>
-              {m.role === "assistant" && <img src={avatar} alt="" className="h-8 w-8 shrink-0 self-start rounded-full object-cover" />}
+              {m.role === "assistant" && avatar && <img src={avatar} alt="" className="h-8 w-8 shrink-0 self-start rounded-full object-cover" />}
               <MessageContent>
                 {m.parts.map((p, i) =>
                   p.type === "text" ? <MessageResponse key={i}>{p.text}</MessageResponse> : null,
@@ -141,7 +157,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
           ))}
           {status === "submitted" && (
             <div className="flex items-center gap-3">
-              <img src={avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+              {avatar && <img src={avatar} alt="" className="h-8 w-8 rounded-full object-cover" />}
               <Shimmer>{readingMemory ? "Reading story memory…" : `${character.name} is thinking…`}</Shimmer>
             </div>
           )}
@@ -170,6 +186,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
           </PromptInputFooter>
         </PromptInput>
       </div>
+      {pip && avatar && <PhotoWindow src={avatar} title={character.name} onClose={() => setPip(false)} />}
     </main>
   );
 }
