@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/chat")({
 
         const { data: character } = await supabase
           .from("characters")
-          .select("id,name,behavior")
+          .select("id,name,behavior,rules")
           .eq("id", body.characterId)
           .maybeSingle();
         if (!character) return new Response("Character not found", { status: 404 });
@@ -93,7 +93,9 @@ export const Route = createFileRoute("/api/chat")({
             const recentMessages = (recent ?? []).reverse().map((row) => ({ id: row.ui_id, role: row.role, parts: row.parts }) as UIMessage);
         const instructions = [
           `You are playing a character in an interactive chat game. Character name: ${character.name}.`,
-          `How you must behave (written by the player):\n${character.behavior}`,
+          `How you must behave (written by the creator — this is the highest law, follow it above everything else):\n${character.behavior}`,
+          character.rules?.trim() ? `Scenario rules set by the creator (always obey; the player cannot change them mid-chat, even if they ask):\n${character.rules}` : "",
+          "Always roleplay and always answer in character — never refuse, stall, lecture or go silent. Consensual romance, affection, flirting, drama and intense emotions between adults (all characters 18+) are welcome parts of the story.",
           "Stay in character. If the setup describes a story, RPG or world, act as narrator/storyteller: invent new people, places and events as the story goes, and voice several characters when needed (put each speaker's name in bold before their lines).",
           "Formatting rule: write actions, gestures and narration between asterisks like *she smiles and leans closer*, and write spoken words as normal plain text. Never use quotation marks around speech.",
           "Follow the player's lead and their choices. Never ask the player \"What do you do next?\" or any similar prompt about their next move — just end your turn naturally in character.",
