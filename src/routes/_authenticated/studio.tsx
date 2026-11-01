@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Wand2, Pencil, UserPlus, Undo2 } from "lucide-react";
 import { authHeaders } from "@/lib/api";
@@ -33,7 +33,15 @@ const ideas = [
 function StudioPage() {
   const navigate = useNavigate();
   const { photo: photoParam } = Route.useSearch();
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPromptRaw] = useState("");
+  const [undoText, setUndoText] = useState<string | null>(null);
+  useEffect(() => { setPromptRaw(localStorage.getItem("studio-draft") ?? ""); }, []);
+  const setPrompt = (v: string) => { setPromptRaw(v); localStorage.setItem("studio-draft", v); };
+  function pickIdea(i: string) {
+    if (prompt.trim() && prompt !== i && !confirm("Replace your text with this idea?")) return;
+    if (prompt.trim()) setUndoText(prompt);
+    setPrompt(i);
+  }
   const [reference, setReference] = useState<File | null>(null);
   const [change, setChange] = useState("");
   const [history, setHistory] = useState<string[]>(photoParam ? [photoParam] : []);
@@ -98,11 +106,16 @@ function StudioPage() {
           <Textarea id="pp" rows={3} value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={ideas[0]} />
           <div className="flex flex-wrap gap-1.5">
             {ideas.map((i) => (
-              <button key={i} type="button" onClick={() => setPrompt(i)} className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground hover:text-foreground">
+              <button key={i} type="button" onClick={() => pickIdea(i)} className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground hover:text-foreground">
                 {i}
               </button>
             ))}
           </div>
+          {undoText !== null && (
+            <button type="button" className="text-xs font-semibold text-primary underline" onClick={() => { setPrompt(undoText); setUndoText(null); }}>
+              Bring back my text
+            </button>
+          )}
           <Label htmlFor="ref">Or start from a real photo (optional)</Label>
           <Input id="ref" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setReference(e.target.files?.[0] ?? null)} />
           <Button className="w-full rounded-full" disabled={busy || (prompt.trim().length < 3 && !reference)} onClick={() => run("new")}>
@@ -113,7 +126,7 @@ function StudioPage() {
         {photo && (
           <div className="space-y-3 rounded-[2rem] border border-border bg-card/90 p-6 shadow-soft">
             <Label htmlFor="ch">What should change?</Label>
-            <Textarea id="ch" rows={2} value={change} onChange={(e) => setChange(e.target.value)} placeholder="make her skin darker, add earrings, blue background…" />
+            <Textarea id="ch" rows={2} value={change} onChange={(e) => setChange(e.target.value)} placeholder="just say it simply: longer hair, darker skin, add glasses…" />
             <Button variant="secondary" className="w-full rounded-full" disabled={busy || change.trim().length < 2} onClick={() => run("edit")}>
               <Pencil className="h-4 w-4" /> Apply change
             </Button>

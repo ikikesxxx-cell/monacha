@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Camera, Pencil, UserPlus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Camera, Pencil, Trash2, UserPlus } from "lucide-react";
+import { authHeaders } from "@/lib/api";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-type Gen = { id: string; prompt: string; url: string; from_reference: boolean; status: string; created_at: string };
+type Gen = { id: string; parent_id: string | null; prompt: string; url: string; from_reference: boolean; status: string; created_at: string };
 const db = supabase as unknown as { from: (t: string) => any };
 
 const galleryQuery = queryOptions({
@@ -14,7 +17,7 @@ const galleryQuery = queryOptions({
   queryFn: async () => {
     const { data } = await db
       .from("photo_generations")
-      .select("id,prompt,url,from_reference,status,created_at")
+      .select("id,parent_id,prompt,url,from_reference,status,created_at")
       .order("created_at", { ascending: false });
     return (data ?? []) as Gen[];
   },
@@ -44,6 +47,24 @@ const statusLabel: Record<string, string> = {
 function GalleryPage() {
   const { data: photos } = useSuspenseQuery(galleryQuery);
   const [open, setOpen] = useState<Gen | null>(null);
+  const qc = useQueryClient();
+  const byId = new Map(photos.map((p) => [p.id, p]));
+  const hasChild = new Set(photos.map((p) => p.parent_id).filter(Boolean));
+  const latest = photos.filter((p) => !hasChild.has(p.id));
+  const earlier = (g: Gen) => {
+    const out: Gen[] = [];
+    let cur = g.parent_id ? byId.get(g.parent_id) : undefined;
+    while (cur && out.length < 50) { out.push(cur); cur = cur.parent_id ? byId.get(cur.parent_id) : undefined; }
+    return out;
+  };
+  async function remove(g: Gen) {
+    if (!confirm("Delete this photo forever? This cannot be undone.")) return;
+    const res = await fetch("/api/avatar", { method: "DELETE", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ id: g.id }) });
+    if (!res.ok) { toast.error("Couldn't delete the photo."); return; }
+    setOpen(null);
+    await qc.invalidateQueries({ queryKey: ["gallery"] });
+    toast.success("Photo deleted forever");
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
@@ -62,18 +83,30 @@ function GalleryPage() {
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-          {photos.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => setOpen(g)}
-              className="rounded-[1.75rem] bg-card p-2 pb-3 text-left shadow-soft transition-transform hover:-translate-y-0.5"
-            >
-              <img src={g.url} alt={g.prompt} loading="lazy" className="aspect-square w-full rounded-[1.4rem] object-cover" />
-              <p className="mt-2 line-clamp-2 px-2 text-sm text-muted-foreground">{g.prompt}</p>
-              <p className="px-2 text-xs text-muted-foreground/70">{statusLabel[g.status] ?? g.status}</p>
-            </button>
-          ))}
+          {latest.map((g) => {
+            const prev = earlier(g);
+            return (
+              <div key={g.id} className="rounded-[1.75rem] bg-card p-2 pb-3 shadow-soft">
+                <button type="button" onClick={() => setOpen(g)} className="w-full text-left transition-transform hover:-translate-y-0.5">
+                  <img src={g.url} alt={g.prompt} loading="lazy" className="aspect-square w-full rounded-[1.4rem] object-cover" />
+                  <p className="mt-2 line-clamp-2 px-2 text-sm text-muted-foreground">{g.prompt}</p>
+                  <p className="px-2 text-xs text-muted-foreground/70">{statusLabel[g.status] ?? g.status}</p>
+                </button>
+                {prev.length > 0 && (
+                  <div className="mt-2 px-2">
+                    <p className="text-xs font-semibold text-muted-foreground">Earlier versions</p>
+                    <div className="mt-1 flex gap-1.5 overflow-x-auto pb-1">
+                      {prev.map((v) => (
+                        <button key={v.id} type="button" onClick={() => setOpen(v)} title={v.prompt}>
+                          <img src={v.url} alt={v.prompt} loading="lazy" className="h-12 w-12 rounded-lg object-cover opacity-80 hover:opacity-100" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -95,6 +128,9 @@ function GalleryPage() {
                   <Link to="/create" search={{ photo: open.url }}>
                     <UserPlus className="h-4 w-4" /> Use for a new character
                   </Link>
+                </Button>
+                <Button variant="destructive" className="rounded-full" onClick={() => remove(open)}>
+                  <Trash2 className="h-4 w-4" /> Delete forever
                 </Button>
               </div>
             </>
