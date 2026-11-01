@@ -65,10 +65,10 @@ export const Route = createFileRoute("/api/avatar")({
           "Follow every detail of the description exactly, especially skin tone, ethnicity, hair color, eye color, age and expression. Never lighten, darken or change the described skin tone.";
         const fullPrompt = [
           editing
-            ? `Edit this photo. Apply ONLY this change: ${change}. Keep everything else identical — same person or animal, face, skin tone, pose, lighting, background and photo style. Keep it ultra-realistic.`
+            ? `Edit this photo. The change request may be short and casual (e.g. "longer hair") — interpret it naturally. Apply ONLY this change: ${change}. Keep everything else identical — same person or animal, face, skin tone, pose, lighting, background and photo style. Keep it ultra-realistic, sharp and high detail, never blurry.`
             : hasRef
             ? `Study the reference photo (subject, features, lighting, setting) and create a brand-new, original ultra-realistic portrait photograph inspired by it — not a copy. Subject: ${subject}.`
-            : `Ultra realistic portrait photograph, natural lighting, sharp focus, looking at the camera, square framing. Subject: ${subject}.`,
+            : `Ultra realistic portrait photograph, natural lighting, tack-sharp focus, high detail, crisp textures, no blur, no grain, looking at the camera, square framing. Subject: ${subject}.`,
           editing ? "" : fidelity,
           editing ? "" : learning,
         ]
@@ -112,7 +112,13 @@ export const Route = createFileRoute("/api/avatar")({
           .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
         if (!signed) return Response.json({ error: "Could not save the photo." }, { status: 500 });
 
+        let parentId: string | null = null;
+        if (editing) {
+          const { data: parent } = await db.from("photo_generations").select("id").eq("url", base).eq("user_id", session.user.id).maybeSingle();
+          parentId = parent?.id ?? null;
+        }
         const { error: logErr } = await db.from("photo_generations").insert({
+          parent_id: parentId,
           user_id: session.user.id,
           prompt: subject,
           url: signed.signedUrl,
@@ -120,6 +126,25 @@ export const Route = createFileRoute("/api/avatar")({
         });
         if (logErr) console.error("could not record generation for review", logErr);
         return Response.json({ url: signed.signedUrl });
+      },
+      DELETE: async ({ request }) => {
+        const { getRequestUser } = await import("@/lib/server/user");
+        const session = await getRequestUser(request);
+        if (!session) return Response.json({ error: "Please sign in again." }, { status: 401 });
+        const db = session.supabase as unknown as { from: (t: string) => any };
+        const { id } = (await request.json().catch(() => ({}))) as { id?: string };
+        if (!id) return Response.json({ error: "Missing photo." }, { status: 400 });
+        const { data: row } = await db.from("photo_generations").select("id,url").eq("id", id).eq("user_id", session.user.id).maybeSingle();
+        if (!row) return Response.json({ error: "Photo not found." }, { status: 404 });
+        const m = String(row.url).match(/\/avatars\/([^?]+)/);
+        const path = m ? decodeURIComponent(m[1]!) : "";
+        if (path.startsWith(`${session.user.id}/`)) {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          await supabaseAdmin.storage.from("avatars").remove([path]);
+        }
+        const { error } = await db.from("photo_generations").delete().eq("id", id);
+        if (error) return Response.json({ error: "Couldn't delete." }, { status: 500 });
+        return Response.json({ ok: true });
       },
     },
   },

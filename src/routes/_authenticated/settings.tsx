@@ -6,13 +6,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { music } from "@/lib/music";
 
 const profileQuery = queryOptions({
   queryKey: ["profile"],
   queryFn: async () => {
     const { data: u } = await supabase.auth.getUser();
     const { data } = await supabase.from("profiles").select("*").eq("id", u.user!.id).maybeSingle();
-    return { id: u.user!.id, email: u.user!.email, display_name: data?.display_name ?? "", reply_length: data?.reply_length ?? "medium" };
+    return { id: u.user!.id, email: u.user!.email, display_name: data?.display_name ?? "", reply_length: data?.reply_length ?? "medium", music_enabled: data?.music_enabled ?? true };
   },
 });
 
@@ -43,9 +45,11 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [name, setName] = useState(data.display_name);
   const [len, setLen] = useState(data.reply_length);
+  const [musicOn, setMusicOn] = useState(data.music_enabled);
 
   async function save() {
-    const { error } = await supabase.from("profiles").upsert({ id: data.id, display_name: name.trim(), reply_length: len });
+    const { error } = await supabase.from("profiles").upsert({ id: data.id, display_name: name.trim(), reply_length: len, music_enabled: musicOn });
+    music.set({ enabled: musicOn, playing: musicOn ? music.get().playing : false });
     if (error) { toast.error("Couldn't save settings."); return; }
     qc.invalidateQueries({ queryKey: ["profile"] });
     toast.success("Settings saved");
@@ -84,6 +88,10 @@ function SettingsPage() {
               </Button>
             ))}
           </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="mu">Background music</Label>
+          <Switch id="mu" checked={musicOn} onCheckedChange={setMusicOn} />
         </div>
         <Button onClick={save} className="w-full rounded-full">Save settings</Button>
       </div>

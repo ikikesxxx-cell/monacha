@@ -13,4 +13,7 @@ export type Character = {
   tagline: string;
   behavior: string;
   avatar_url: string | null;
+  rules?: string;
+  avatar_kind?: string;
+  music?: Record<string, string> | null;
 };
