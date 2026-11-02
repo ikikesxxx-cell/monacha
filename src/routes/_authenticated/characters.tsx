@@ -15,6 +15,19 @@ export const charactersQuery = queryOptions({
   },
 });
 
+export const meQuery = queryOptions({
+  queryKey: ["me"],
+  queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
+});
+
+export const ownerQuery = queryOptions({
+  queryKey: ["is-owner"],
+  queryFn: async () => {
+    const { data } = await supabase.from("user_roles").select("role").eq("role", "admin");
+    return (data ?? []).length > 0;
+  },
+});
+
 export const Route = createFileRoute("/_authenticated/characters")({
   head: () => ({
     meta: [
@@ -29,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/characters")({
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.ensureQueryData(charactersQuery),
+      context.queryClient.ensureQueryData(meQuery),
       context.queryClient.ensureQueryData(reviewQuery).catch(() => null),
     ]),
   component: CharactersPage,
@@ -40,7 +54,9 @@ function CharactersPage() {
   const { data } = useSuspenseQuery(charactersQuery);
   const { data: review } = useSuspenseQuery(reviewQuery);
   const due = isReviewDue(review.lastReviewAt, review.pending.length);
-  const mine = data.filter((c) => c.owner_id);
+  const { data: me } = useSuspenseQuery(meQuery);
+  const mine = data.filter((c) => c.owner_id && c.owner_id === me);
+  const community = data.filter((c) => c.owner_id && c.owner_id !== me);
   const starters = data.filter((c) => !c.owner_id);
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
@@ -64,6 +80,11 @@ function CharactersPage() {
       <Section title="Starter characters">
         {starters.map((c, i) => <Card key={c.id} c={c} tint={tints[(i + 1) % 4]!} />)}
       </Section>
+      {community.length > 0 && (
+        <Section title="Made by other players">
+          {community.map((c, i) => <Card key={c.id} c={c} tint={tints[(i + 2) % 4]!} />)}
+        </Section>
+      )}
     </main>
   );
 }
