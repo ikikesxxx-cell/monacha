@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoWindow } from "@/components/PhotoWindow";
 import { detectMood, music, trackFor } from "@/lib/music";
 import { toast } from "sonner";
@@ -59,6 +59,54 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
   const [text, setText] = useState("");
   const [memory, setMemory] = useState(initialMemory);
   const [readingMemory, setReadingMemory] = useState(false);
+  const [sceneUrl, setSceneUrl] = useState<string | null>(null);
+  const [sceneSetupNeeded, setSceneSetupNeeded] = useState(false);
+  const [sceneError, setSceneError] = useState<string | null>(null);
+  const requestedLocation = useRef<string | null>(null);
+  const loadScene = useCallback(async (nextMemory: Memory) => {
+    const location = nextMemory.facts.find((fact) => fact.key === "player.location")?.detail.trim();
+    if (!location) {
+      requestedLocation.current = null;
+      setSceneUrl(null);
+      setSceneSetupNeeded(false);
+      setSceneError(null);
+      return;
+    }
+    if (location === requestedLocation.current) return;
+    requestedLocation.current = location;
+    setSceneUrl(null);
+    setSceneSetupNeeded(false);
+    setSceneError(null);
+    try {
+      const response = await fetch("/api/scene", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+        body: JSON.stringify({ characterId: character.id }),
+      });
+      if (response.status === 412) {
+        if (requestedLocation.current !== location) return;
+        setSceneSetupNeeded(true);
+        setSceneError(null);
+        return;
+      }
+      if (!response.ok) {
+        const result = await response.json().catch(() => null) as { error?: string } | null;
+        if (requestedLocation.current !== location) return;
+        setSceneError(result?.error ?? "Could not load the scene background.");
+        return;
+      }
+      const result = (await response.json()) as { url?: string | null };
+      if (requestedLocation.current === location) {
+        setSceneUrl(result.url ?? null);
+        setSceneError(null);
+        setSceneSetupNeeded(false);
+      }
+    } catch (error) {
+      console.error("could not load scene background", error instanceof Error ? error.name : "request error");
+      if (requestedLocation.current === location) setSceneError("Could not load the scene background.");
+    }
+  }, [character.id]);
+  useEffect(() => { void loadScene(initialMemory); }, [initialMemory, loadScene]);
   const transport = useMemo(
     () => new DefaultChatTransport({
       api: "/api/chat", headers: authHeaders,
@@ -72,7 +120,12 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
     transport,
     onData: (part) => {
       if (part.type === "data-memory-status") setReadingMemory(true);
-      if (part.type === "data-story-memory") { setMemory(normalizeMemory(part.data)); setReadingMemory(false); }
+      if (part.type === "data-story-memory") {
+        const nextMemory = normalizeMemory(part.data);
+        setMemory(nextMemory);
+        setReadingMemory(false);
+        void loadScene(nextMemory);
+      }
     },
     onError: (e) => { setReadingMemory(false); toast.error(e.message || "Something went wrong."); },
     onFinish: () => qc.invalidateQueries({ queryKey: ["messages", character.id] }),
@@ -134,8 +187,25 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
           </Button>
         )}
       </div>
+      {sceneSetupNeeded && (
+        <p className="mb-2 text-center text-xs text-muted-foreground">
+          Add a Pollinations key in <Link to="/settings" className="underline">Settings</Link> to enable scene backgrounds.
+        </p>
+      )}
+      {!sceneSetupNeeded && sceneError && (
+        <p className="mb-2 text-center text-xs text-muted-foreground">
+          {sceneError} Check your <Link to="/settings" className="underline">provider settings</Link>.
+        </p>
+      )}
 
-      <Conversation className="flex-1 rounded-[2rem] border border-border bg-card/70">
+      <Conversation
+        className={`flex-1 rounded-[2rem] border border-border ${sceneUrl ? "bg-cover bg-center" : "bg-card/70"}`}
+        style={sceneUrl ? {
+          backgroundImage: `linear-gradient(to bottom, rgb(0 0 0 / 45%), rgb(0 0 0 / 55%)), url("${sceneUrl}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        } : undefined}
+      >
         <ConversationContent>
           {messages.length === 0 && (
             <div className="flex flex-col items-center py-12 text-center">

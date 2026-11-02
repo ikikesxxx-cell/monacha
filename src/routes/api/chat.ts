@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { UIMessage } from "ai";
+import type { LanguageModel, UIMessage } from "ai";
 import { memoryContext, RECENT_MESSAGE_COUNT } from "@/lib/conversation-memory";
 
 const LENGTHS: Record<string, string> = {
@@ -34,6 +34,16 @@ export const Route = createFileRoute("/api/chat")({
           .eq("id", user.id)
           .maybeSingle();
 
+        const { getPlayerTextModel, MissingPlayerProviderKeyError } = await import("@/lib/server/player-ai.server");
+        let model: LanguageModel;
+        try {
+          model = await getPlayerTextModel(user.id);
+        } catch (error) {
+          if (error instanceof MissingPlayerProviderKeyError) return new Response(error.message, { status: 412 });
+          console.error("could not load player chat provider", error);
+          return new Response("Could not load your AI provider settings.", { status: 500 });
+        }
+
         const last = messages[messages.length - 1];
         if (last?.role === "user") {
           const { error } = await supabase.from("messages").insert({
@@ -49,42 +59,20 @@ export const Route = createFileRoute("/api/chat")({
           }
         }
 
-        const apiKey = process.env["LOVABLE_API_KEY"];
-        if (!apiKey) return new Response("AI is not configured.", { status: 500 });
-
-        const { createOpenAI } = await import("@ai-sdk/openai");
         const { streamText, convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse } = await import("ai");
         const { refreshStoryMemory } = await import("@/lib/server/story-memory");
-        const { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader } =
-          await import("@/lib/server/run-id");
-
-        const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
-        const provider = createOpenAI({
-          baseURL: "https://ai.gateway.lovable.dev/v1",
-          apiKey,
-          headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-          fetch: runIdFetch.fetch,
-        });
 
         const stream = createUIMessageStream({
           originalMessages: messages,
           onError: (error) => {
-            console.error(error);
+            const providerError = error as { name?: string; statusCode?: number };
+            console.error("player chat provider failed", providerError.name ?? "provider error", providerError.statusCode);
             if (request.signal.aborted) return "Reply stopped.";
-            const e = error as { message?: string; responseBody?: string };
-            if (e.responseBody) {
-              try {
-                const body = JSON.parse(e.responseBody);
-                const message = body.message ?? body.error?.message;
-                if (typeof message === "string") return message;
-              } catch { /* Not a JSON gateway response. */ }
-            }
-            return e.message || "Could not load story memory or get a reply.";
+            return "Your provider couldn't complete this reply. Check your API key, model name, and provider limits.";
           },
           execute: async ({ writer }) => {
             writer.write({ type: "data-memory-status", data: { status: "reading" }, transient: true });
-            const memory = await refreshStoryMemory({ supabase, userId: user.id, characterId: character.id,
-              model: provider.responses("openai/gpt-6-astra"), signal: request.signal });
+            const memory = await refreshStoryMemory({ supabase, userId: user.id, characterId: character.id, model, signal: request.signal });
             writer.write({ type: "data-story-memory", data: memory, transient: true });
             const { data: recent, error } = await supabase.from("messages").select("ui_id,role,parts,created_at,id")
               .eq("user_id", user.id).eq("character_id", character.id).order("created_at", { ascending: false })
@@ -108,19 +96,10 @@ export const Route = createFileRoute("/api/chat")({
           .join("\n\n");
 
         const result = streamText({
-          model: provider.responses("openai/gpt-6-astra"),
+          model,
           instructions,
           messages: await convertToModelMessages(recentMessages),
           abortSignal: request.signal,
-          providerOptions: {
-            openai: {
-              store: false,
-              forceReasoning: true,
-              reasoningEffort: "low",
-              reasoningSummary: "auto",
-              include: ["reasoning.encrypted_content"],
-            },
-          },
         });
 
             writer.merge(result.toUIMessageStream());
@@ -138,8 +117,7 @@ export const Route = createFileRoute("/api/chat")({
               if (error) console.error("save assistant message failed", error);
             },
         });
-        return withLovableAiGatewayRunIdHeader(createUIMessageStreamResponse({ stream, keepAliveMs: 10000 }), runIdFetch,
-          { "Cache-Control": "no-store" }, { waitForUpstreamHeaders: false });
+        return createUIMessageStreamResponse({ stream, keepAliveMs: 10000, headers: { "Cache-Control": "no-store" } });
       },
     },
   },

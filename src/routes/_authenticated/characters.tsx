@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Character } from "@/lib/api";
+import { ownerQuery } from "@/lib/owner";
 import { isReviewDue } from "@/lib/photo-learning";
 import { reviewQuery } from "./review";
 
@@ -18,14 +19,6 @@ export const charactersQuery = queryOptions({
 export const meQuery = queryOptions({
   queryKey: ["me"],
   queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
-});
-
-export const ownerQuery = queryOptions({
-  queryKey: ["is-owner"],
-  queryFn: async () => {
-    const { data } = await supabase.from("user_roles").select("role").eq("role", "admin");
-    return (data ?? []).length > 0;
-  },
 });
 
 export const Route = createFileRoute("/_authenticated/characters")({

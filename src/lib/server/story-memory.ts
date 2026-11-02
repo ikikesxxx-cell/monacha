@@ -45,7 +45,6 @@ export async function refreshStoryMemory({ supabase, userId, characterId, model,
         output: Output.object({ schema: memorySchema }),
         abortSignal: signal,
         maxRetries: 0,
-        providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false, include: ["reasoning.encrypted_content"] } },
       });
       memory = normalizeMemory(await extraction.output);
     }

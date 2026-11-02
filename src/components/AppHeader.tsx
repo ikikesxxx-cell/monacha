@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Camera, Images, Library, Plus, Settings, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Camera, Images, Library, Lock, Plus, Settings, Users } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { ownerQuery } from "@/lib/owner";
 
 export function AppHeader() {
+  const owner = useQuery(ownerQuery);
   const link =
     "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-card hover:text-foreground";
   const active = { className: "bg-card text-foreground shadow-soft" };
@@ -29,6 +32,11 @@ export function AppHeader() {
           <Link to="/review" className={link} activeProps={active}>
             <Images className="h-4 w-4" /> <span className="hidden sm:inline">Review</span>
           </Link>
+          {owner.data && (
+            <Link to="/vault" className={link} activeProps={active}>
+              <Lock className="h-4 w-4" /> <span className="hidden sm:inline">Vault</span>
+            </Link>
+          )}
           <Link to="/settings" className={link} activeProps={active}>
             <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Settings</span>
           </Link>

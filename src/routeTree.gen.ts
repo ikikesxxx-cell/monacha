@@ -22,6 +22,8 @@ import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/
 import { Route as ApiAvatarRouteImport } from './routes/api/avatar'
 import { Route as ApiCharacterHelperRouteImport } from './routes/api/character-helper'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiProviderSettingsRouteImport } from './routes/api/provider-settings'
+import { Route as ApiSceneRouteImport } from './routes/api/scene'
 import { Route as AuthenticatedChatCharacterIdRouteImport } from './routes/_authenticated/chat.$characterId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -88,6 +90,16 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProviderSettingsRoute = ApiProviderSettingsRouteImport.update({
+  id: '/api/provider-settings',
+  path: '/api/provider-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSceneRoute = ApiSceneRouteImport.update({
+  id: '/api/scene',
+  path: '/api/scene',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedChatCharacterIdRoute =
   AuthenticatedChatCharacterIdRouteImport.update({
     id: '/chat/$characterId',
@@ -108,6 +120,8 @@ export interface FileRoutesByFullPath {
   '/api/avatar': typeof ApiAvatarRoute
   '/api/character-helper': typeof ApiCharacterHelperRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/provider-settings': typeof ApiProviderSettingsRoute
+  '/api/scene': typeof ApiSceneRoute
   '/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
 }
 export interface FileRoutesByTo {
@@ -123,6 +137,8 @@ export interface FileRoutesByTo {
   '/api/avatar': typeof ApiAvatarRoute
   '/api/character-helper': typeof ApiCharacterHelperRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/provider-settings': typeof ApiProviderSettingsRoute
+  '/api/scene': typeof ApiSceneRoute
   '/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
 }
 export interface FileRoutesById {
@@ -140,6 +156,8 @@ export interface FileRoutesById {
   '/api/avatar': typeof ApiAvatarRoute
   '/api/character-helper': typeof ApiCharacterHelperRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/provider-settings': typeof ApiProviderSettingsRoute
+  '/api/scene': typeof ApiSceneRoute
   '/_authenticated/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
 }
 export interface FileRouteTypes {
@@ -157,6 +175,8 @@ export interface FileRouteTypes {
     | '/api/avatar'
     | '/api/character-helper'
     | '/api/chat'
+    | '/api/provider-settings'
+    | '/api/scene'
     | '/chat/$characterId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -172,6 +192,8 @@ export interface FileRouteTypes {
     | '/api/avatar'
     | '/api/character-helper'
     | '/api/chat'
+    | '/api/provider-settings'
+    | '/api/scene'
     | '/chat/$characterId'
   id:
     | '__root__'
@@ -188,6 +210,8 @@ export interface FileRouteTypes {
     | '/api/avatar'
     | '/api/character-helper'
     | '/api/chat'
+    | '/api/provider-settings'
+    | '/api/scene'
     | '/_authenticated/chat/$characterId'
   fileRoutesById: FileRoutesById
 }
@@ -198,6 +222,8 @@ export interface RootRouteChildren {
   ApiAvatarRoute: typeof ApiAvatarRoute
   ApiCharacterHelperRoute: typeof ApiCharacterHelperRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiProviderSettingsRoute: typeof ApiProviderSettingsRoute
+  ApiSceneRoute: typeof ApiSceneRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -293,6 +319,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/provider-settings': {
+      id: '/api/provider-settings'
+      path: '/api/provider-settings'
+      fullPath: '/api/provider-settings'
+      preLoaderRoute: typeof ApiProviderSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/scene': {
+      id: '/api/scene'
+      path: '/api/scene'
+      fullPath: '/api/scene'
+      preLoaderRoute: typeof ApiSceneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/chat/$characterId': {
       id: '/_authenticated/chat/$characterId'
       path: '/chat/$characterId'
@@ -335,6 +375,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAvatarRoute: ApiAvatarRoute,
   ApiCharacterHelperRoute: ApiCharacterHelperRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiProviderSettingsRoute: ApiProviderSettingsRoute,
+  ApiSceneRoute: ApiSceneRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

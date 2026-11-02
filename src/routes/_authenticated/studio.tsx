@@ -14,11 +14,11 @@ export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({
     meta: [
       { title: "Photo studio — Hearthtalk" },
-      { name: "description", content: "Generate realistic character photos and tweak them step by step." },
+      { name: "description", content: "Generate and edit character photos with your Pollinations key." },
       { property: "og:title", content: "Photo studio — Hearthtalk" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:description", content: "Generate realistic character photos and tweak them step by step." },
+      { property: "og:description", content: "Generate and edit character photos with your Pollinations key." },
     ],
   }),
   component: StudioPage,

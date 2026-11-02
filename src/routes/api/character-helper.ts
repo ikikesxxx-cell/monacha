@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { LanguageModel } from "ai";
+import { z } from "zod";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1";
-const MODEL = "openai/gpt-6-astra";
+const draftSchema = z.object({
+  name: z.string(),
+  tagline: z.string(),
+  behavior: z.string(),
+  rules: z.string(),
+  questions: z.array(z.string()),
+});
 
 export const Route = createFileRoute("/api/character-helper")({
   server: {
@@ -11,19 +18,26 @@ export const Route = createFileRoute("/api/character-helper")({
         const session = await getRequestUser(request);
         if (!session) return Response.json({ error: "Please sign in again." }, { status: 401 });
 
-        const body = (await request.json().catch(() => null)) as { idea?: string; brainstorm?: boolean } | null;
-        const idea = body?.idea?.trim() ?? "";
+        const body = (await request.json().catch(() => null)) as { idea?: unknown; brainstorm?: unknown } | null;
+        const idea = typeof body?.idea === "string" ? body.idea.trim() : "";
         if (idea.length < 3) return Response.json({ error: "Describe your character idea first." }, { status: 400 });
+        if (idea.length > 8000) return Response.json({ error: "Keep your character idea under 8,000 characters." }, { status: 400 });
 
-        const apiKey = process.env["LOVABLE_API_KEY"];
-        if (!apiKey) return Response.json({ error: "AI is not configured." }, { status: 500 });
+        const { getPlayerTextModel, MissingPlayerProviderKeyError } = await import("@/lib/server/player-ai.server");
+        let model: LanguageModel;
+        try {
+          model = await getPlayerTextModel(session.user.id);
+        } catch (error) {
+          if (error instanceof MissingPlayerProviderKeyError) return Response.json({ error: error.message }, { status: 412 });
+          console.error("could not load player chat provider", error);
+          return Response.json({ error: "Could not load your AI provider settings." }, { status: 500 });
+        }
 
-        const upstream = await fetch(`${GATEWAY}/responses`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: MODEL,
-            instructions:
+        const { generateText, Output } = await import("ai");
+        try {
+          const { output } = await generateText({
+            model,
+            system:
               "You help a player design a character for an interactive chat game. From their short idea, invent: " +
               "a fitting name, a one-line tagline, and a 'behavior' text of 2-4 short paragraphs that tells the game AI how to play this character " +
               "(personality, way of talking, world or setting; if the idea sounds like a story or RPG, describe the AI as narrator who invents people and events). " +
@@ -32,50 +46,20 @@ export const Route = createFileRoute("/api/character-helper")({
               (body?.brainstorm
                 ? "The player is unsure how to describe their idea. In 'questions', ask 2-4 short friendly questions about what is still missing to make it perfect."
                 : "Set 'questions' to an empty array unless something essential is missing."),
-            input: idea,
-            reasoning: { effort: "low" },
-            text: {
-              format: {
-                type: "json_schema",
-                name: "character_draft",
-                strict: true,
-                schema: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string" },
-                    tagline: { type: "string" },
-                    behavior: { type: "string" },
-                    rules: { type: "string" },
-                    questions: { type: "array", items: { type: "string" } },
-                  },
-                  required: ["name", "tagline", "behavior", "rules", "questions"],
-                  additionalProperties: false,
-                },
-              },
-            },
-          }),
-        });
-        if (!upstream.ok) {
-          console.error("character helper failed", upstream.status, await upstream.text());
-          const msg =
-            upstream.status === 429
-              ? "The AI is busy right now. Please wait a moment and try again."
-              : upstream.status === 402
-                ? "AI credits have run out. Please add credits to keep creating."
-                : "The helper couldn't write a draft. Please try again.";
-          return Response.json({ error: msg }, { status: upstream.status });
+            prompt: idea,
+            output: Output.object({ schema: draftSchema }),
+            abortSignal: request.signal,
+            maxRetries: 0,
+          });
+          if (!output) return Response.json({ error: "The helper gave a broken answer. Please try again." }, { status: 502 });
+          return Response.json(output);
+        } catch (error) {
+          console.error("character helper failed", error instanceof Error ? error.name : "provider error");
+          return Response.json(
+            { error: "The selected provider couldn't write a draft. Check your key, model name, and provider limits." },
+            { status: 502 },
+          );
         }
-        const json = (await upstream.json()) as {
-          output?: { type: string; content?: { type: string; text?: string }[] }[];
-        };
-        const text = json.output?.find((o) => o.type === "message")?.content?.find((c) => c.type === "output_text")?.text;
-        let draft: { name: string; tagline: string; behavior: string };
-        try {
-          draft = JSON.parse(text ?? "");
-        } catch {
-          return Response.json({ error: "The helper gave a broken answer. Please try again." }, { status: 502 });
-        }
-        return Response.json(draft);
       },
     },
   },
