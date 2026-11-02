@@ -5,3 +5,9 @@
 - [x] Create character with AI photo + behavior; chat (story/RPG, multi-character)
 - [x] Upload real reference photo → AI makes its own version
 - [x] Weekly photo review: accept/decline generated photos; accepted/declined feedback steers future generations
+- [x] Studio auto-save + "are you sure?" on quick ideas; simple change box; sharper photos
+- [x] Gallery earlier versions under each photo; use or delete forever
+- [x] Floating movable/resizable photo window in chat
+- [x] Create: 3 modes (solo / AI follows orders / think together), Rules tab locked during play, no-photo option
+- [x] Background music (default YouTube track), off switch in settings, creator mood tracks
+- [ ] Scene photos, player portrait, public/private characters, owner-only board, suggestion card
