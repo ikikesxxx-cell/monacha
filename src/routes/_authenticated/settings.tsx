@@ -236,7 +236,7 @@ function SettingsPage() {
               value={apiKeys[provider]}
               onChange={(event) => setApiKeys((current) => ({ ...current, [provider]: event.target.value }))}
               placeholder={providerSettings.configured[provider] ? "Saved — enter a new key to replace" : "Paste your API key"}
-              disabled={providerLoading}
+              disabled={providerLoading || providerMigrationRequired}
             />
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs text-muted-foreground">
@@ -244,10 +244,10 @@ function SettingsPage() {
                 {provider === "pollinations" && " · Photo and scene usage spends from your Pollinations budget"}
               </span>
               <div className="flex gap-2">
-                <Button type="button" size="sm" variant="outline" className="rounded-full" disabled={providerBusy !== null || !apiKeys[provider].trim()} onClick={() => saveProviderKey(provider)}>
+                <Button type="button" size="sm" variant="outline" className="rounded-full" disabled={providerBusy !== null || providerLoading || providerMigrationRequired || !apiKeys[provider].trim()} onClick={() => saveProviderKey(provider)}>
                   Save key
                 </Button>
-                <Button type="button" size="sm" variant="ghost" className="rounded-full" disabled={providerBusy !== null || !providerSettings.configured[provider]} onClick={() => removeProviderKey(provider)}>
+                <Button type="button" size="sm" variant="ghost" className="rounded-full" disabled={providerBusy !== null || providerLoading || providerMigrationRequired || !providerSettings.configured[provider]} onClick={() => removeProviderKey(provider)}>
                   Remove
                 </Button>
               </div>
@@ -260,6 +260,7 @@ function SettingsPage() {
             id="text-provider"
             className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             value={providerSettings.textProvider}
+            disabled={providerLoading || providerMigrationRequired}
             onChange={(event) => {
               const textProvider = event.target.value as TextProvider;
               setProviderSettings((current) => ({
@@ -280,8 +281,9 @@ function SettingsPage() {
             onChange={(event) => setProviderSettings((current) => ({ ...current, textModel: event.target.value }))}
             placeholder={defaultModels[providerSettings.textProvider]}
             maxLength={160}
+            disabled={providerLoading || providerMigrationRequired}
           />
-          <Button type="button" className="w-full rounded-full" disabled={providerBusy !== null || providerLoading || !providerSettings.textModel.trim()} onClick={saveChatProvider}>
+          <Button type="button" className="w-full rounded-full" disabled={providerBusy !== null || providerLoading || providerMigrationRequired || !providerSettings.textModel.trim()} onClick={saveChatProvider}>
             {providerBusy === "chat" ? "Saving…" : "Save chat provider"}
           </Button>
         </div>

@@ -9,6 +9,10 @@ const EMPTY_SETTINGS = {
   textModel: "",
   configured: { groq: false, gemini: false, openrouter: false, pollinations: false },
 };
+const MIGRATION_REQUIRED_MESSAGE = "AI provider settings are not initialized. Apply database migration 0007 and try again.";
+const migrationRequiredResponse = () =>
+  Response.json({ error: MIGRATION_REQUIRED_MESSAGE, migrationRequired: true }, { status: 503 });
+const isMigrationMissing = (code: string) => code === "42P01" || code === "PGRST205";
 const KEY_COLUMNS: Record<Provider, "groq_api_key" | "gemini_api_key" | "openrouter_api_key" | "pollinations_api_key"> = {
   groq: "groq_api_key",
   gemini: "gemini_api_key",
@@ -31,7 +35,7 @@ export const Route = createFileRoute("/api/provider-settings")({
           .eq("user_id", session.user.id)
           .maybeSingle();
         if (error) {
-          if (error.code === "42P01" || error.code === "PGRST205") {
+          if (isMigrationMissing(error.code)) {
             return Response.json({ ...EMPTY_SETTINGS, migrationRequired: true });
           }
           console.error("could not read provider settings", error.code);
@@ -101,6 +105,7 @@ export const Route = createFileRoute("/api/provider-settings")({
           .eq("user_id", session.user.id)
           .maybeSingle();
         if (readError) {
+          if (isMigrationMissing(readError.code)) return migrationRequiredResponse();
           console.error("could not read provider settings before update", readError.code);
           return Response.json({ error: "Could not save provider settings." }, { status: 500 });
         }
@@ -123,6 +128,7 @@ export const Route = createFileRoute("/api/provider-settings")({
           }
         }
         if (error) {
+          if (isMigrationMissing(error.code)) return migrationRequiredResponse();
           console.error("could not save provider settings", error.code);
           return Response.json({ error: "Could not save provider settings." }, { status: 500 });
         }
@@ -149,6 +155,7 @@ export const Route = createFileRoute("/api/provider-settings")({
           .update({ ...keyUpdate, updated_at: new Date().toISOString() })
           .eq("user_id", session.user.id);
         if (error) {
+          if (isMigrationMissing(error.code)) return migrationRequiredResponse();
           console.error("could not remove provider key", error.code);
           return Response.json({ error: "Could not remove provider key." }, { status: 500 });
         }
