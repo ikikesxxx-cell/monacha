@@ -70,6 +70,7 @@ export const Route = createFileRoute("/api/avatar")({
             ? `Study the reference photo (subject, features, lighting, setting) and create a brand-new, original ultra-realistic portrait photograph inspired by it — not a copy. Subject: ${subject}.`
             : `Ultra realistic portrait photograph, natural lighting, tack-sharp focus, high detail, crisp textures, no blur, no grain, looking at the camera, square framing. Subject: ${subject}.`,
           editing ? "" : fidelity,
+          "Make it look like a real, imperfect living being — never a flawless, airbrushed or plastic face. Include natural skin texture and visible pores, slight facial asymmetry, small blemishes, freckles, fine lines or stray hairs, uneven natural lighting and real-world details. Perfect symmetry or doll-like smoothness is wrong.",
           editing ? "" : learning,
         ]
           .filter(Boolean)

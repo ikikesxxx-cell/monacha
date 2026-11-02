@@ -36,6 +36,20 @@
       "when": 1793516207896,
       "tag": "0004_photo_versions_rules_music",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793606189378,
+      "tag": "0005_public_characters_owner_vault",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793606219866,
+      "tag": "0006_grant_owner_role",
+      "breakpoints": true
     }
   ]
 }

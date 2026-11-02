@@ -18,6 +18,7 @@ import { Route as AuthenticatedGalleryRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
+import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
 import { Route as ApiAvatarRouteImport } from './routes/api/avatar'
 import { Route as ApiCharacterHelperRouteImport } from './routes/api/character-helper'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -67,6 +68,11 @@ const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVaultRoute = AuthenticatedVaultRouteImport.update({
+  id: '/vault',
+  path: '/vault',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiAvatarRoute = ApiAvatarRouteImport.update({
   id: '/api/avatar',
   path: '/api/avatar',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/studio': typeof AuthenticatedStudioRoute
+  '/vault': typeof AuthenticatedVaultRoute
   '/api/avatar': typeof ApiAvatarRoute
   '/api/character-helper': typeof ApiCharacterHelperRoute
   '/api/chat': typeof ApiChatRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/studio': typeof AuthenticatedStudioRoute
+  '/vault': typeof AuthenticatedVaultRoute
   '/api/avatar': typeof ApiAvatarRoute
   '/api/character-helper': typeof ApiCharacterHelperRoute
   '/api/chat': typeof ApiChatRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/studio': typeof AuthenticatedStudioRoute
+  '/_authenticated/vault': typeof AuthenticatedVaultRoute
   '/api/avatar': typeof ApiAvatarRoute
   '/api/character-helper': typeof ApiCharacterHelperRoute
   '/api/chat': typeof ApiChatRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/studio'
+    | '/vault'
     | '/api/avatar'
     | '/api/character-helper'
     | '/api/chat'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/review'
     | '/settings'
     | '/studio'
+    | '/vault'
     | '/api/avatar'
     | '/api/character-helper'
     | '/api/chat'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authenticated/review'
     | '/_authenticated/settings'
     | '/_authenticated/studio'
+    | '/_authenticated/vault'
     | '/api/avatar'
     | '/api/character-helper'
     | '/api/chat'
@@ -253,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vault': {
+      id: '/_authenticated/vault'
+      path: '/vault'
+      fullPath: '/vault'
+      preLoaderRoute: typeof AuthenticatedVaultRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/avatar': {
       id: '/api/avatar'
       path: '/api/avatar'
@@ -291,6 +310,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
+  AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
   AuthenticatedChatCharacterIdRoute: typeof AuthenticatedChatCharacterIdRoute
 }
 
@@ -301,6 +321,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStudioRoute: AuthenticatedStudioRoute,
+  AuthenticatedVaultRoute: AuthenticatedVaultRoute,
   AuthenticatedChatCharacterIdRoute: AuthenticatedChatCharacterIdRoute,
 }
 
