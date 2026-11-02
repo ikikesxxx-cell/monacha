@@ -48,6 +48,7 @@ function CreatePage() {
   const [noPhoto, setNoPhoto] = useState(false);
   const photo = noPhoto ? null : (photoParam ?? null);
   const [saving, setSaving] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [idea, setIdea] = useState("");
   const [answers, setAnswers] = useState("");
   const [questions, setQuestions] = useState<string[]>([]);
@@ -89,7 +90,7 @@ function CreatePage() {
     const { data, error } = await supabase
       .from("characters")
       .insert({ owner_id: u.user!.id, name: name.trim(), tagline: tagline.trim(), behavior: behavior.trim(), rules: rules.trim(),
-        avatar_url: photo, avatar_kind: noPhoto ? "none" : "photo", music: musicMap })
+        avatar_url: photo, avatar_kind: noPhoto ? "none" : "photo", music: musicMap, is_public: isPublic })
       .select("id")
       .single();
     setSaving(false);
@@ -198,6 +199,13 @@ function CreatePage() {
             ))}
           </TabsContent>
         </Tabs>
+        <label className="flex items-center justify-between gap-3 rounded-2xl bg-card p-4 shadow-soft">
+          <span>
+            <span className="block font-semibold">{isPublic ? "Public" : "Private"}</span>
+            <span className="text-sm text-muted-foreground">{isPublic ? "Every player can find and chat with it." : "Only you can see it."}</span>
+          </span>
+          <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+        </label>
         <Button onClick={save} disabled={saving} size="lg" className="w-full rounded-full shadow-soft">
           {saving ? "Saving…" : "Save & start chatting"}
         </Button>
