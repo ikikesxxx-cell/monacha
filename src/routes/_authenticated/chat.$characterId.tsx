@@ -17,16 +17,32 @@ import { Button } from "@/components/ui/button";
 import { StoryMemory } from "@/components/StoryMemory";
 import { EMPTY_MEMORY, normalizeMemory, type StoryMemory as Memory } from "@/lib/conversation-memory";
 
-const chatQuery = (id: string) =>
+async function getChatUserId() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user) throw new Error("Please sign in again to view this conversation.");
+  return data.user.id;
+}
+
+const chatQuery = (id: string, userId: string) =>
   queryOptions({
-    queryKey: ["messages", id],
+    queryKey: ["messages", userId, id],
     queryFn: async () => {
-      const [{ data: c, error }, { data: rows }, { data: memory }] = await Promise.all([
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (authData.user?.id !== userId) throw new Error("Your account changed. Refresh to reload this conversation.");
+      const [
+        { data: c, error: characterError },
+        { data: rows, error: messagesError },
+        { data: memory, error: memoryError },
+      ] = await Promise.all([
         supabase.from("characters").select("*").eq("id", id).single(),
-        supabase.from("messages").select("ui_id,role,parts").eq("character_id", id).order("created_at"),
-        supabase.from("conversation_memories").select("facts,summary").eq("character_id", id).maybeSingle(),
+        supabase.from("messages").select("ui_id,role,parts").eq("user_id", userId).eq("character_id", id).order("created_at"),
+        supabase.from("conversation_memories").select("facts,summary").eq("user_id", userId).eq("character_id", id).maybeSingle(),
       ]);
-      if (error) throw error;
+      if (characterError) throw characterError;
+      if (messagesError) throw messagesError;
+      if (memoryError) throw memoryError;
       const messages = (rows ?? []).map((r) => ({ id: r.ui_id, role: r.role, parts: r.parts }) as UIMessage);
       return { character: c as Character, messages, memory: memory ? normalizeMemory(memory) : EMPTY_MEMORY };
     },
@@ -43,13 +59,18 @@ export const Route = createFileRoute("/_authenticated/chat/$characterId")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  loader: ({ context, params }) => context.queryClient.ensureQueryData(chatQuery(params.characterId)),
+  loader: async ({ context, params }) => {
+    const userId = await getChatUserId();
+    await context.queryClient.ensureQueryData(chatQuery(params.characterId, userId));
+    return userId;
+  },
   component: ChatPage,
 });
 
 function ChatPage() {
   const { characterId } = Route.useParams();
-  const { data } = useSuspenseQuery(chatQuery(characterId));
+  const userId = Route.useLoaderData();
+  const { data } = useSuspenseQuery(chatQuery(characterId, userId));
   return <ChatWindow key={characterId} character={data.character} initial={data.messages} initialMemory={data.memory} />;
 }
 

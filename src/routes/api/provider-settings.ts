@@ -4,6 +4,11 @@ const PROVIDERS = ["groq", "gemini", "openrouter", "pollinations"] as const;
 const TEXT_PROVIDERS = ["groq", "gemini", "openrouter"] as const;
 type Provider = (typeof PROVIDERS)[number];
 type TextProvider = (typeof TEXT_PROVIDERS)[number];
+const EMPTY_SETTINGS = {
+  textProvider: "gemini" as const,
+  textModel: "",
+  configured: { groq: false, gemini: false, openrouter: false, pollinations: false },
+};
 const KEY_COLUMNS: Record<Provider, "groq_api_key" | "gemini_api_key" | "openrouter_api_key" | "pollinations_api_key"> = {
   groq: "groq_api_key",
   gemini: "gemini_api_key",
@@ -26,7 +31,10 @@ export const Route = createFileRoute("/api/provider-settings")({
           .eq("user_id", session.user.id)
           .maybeSingle();
         if (error) {
-          console.error("could not read provider settings", error);
+          if (error.code === "42P01" || error.code === "PGRST205") {
+            return Response.json({ ...EMPTY_SETTINGS, migrationRequired: true });
+          }
+          console.error("could not read provider settings", error.code);
           return Response.json({ error: "Could not load provider settings." }, { status: 500 });
         }
         return Response.json({

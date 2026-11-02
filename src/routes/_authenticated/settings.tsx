@@ -80,6 +80,7 @@ function SettingsPage() {
   });
   const [providerLoading, setProviderLoading] = useState(true);
   const [providerBusy, setProviderBusy] = useState<Provider | "chat" | null>(null);
+  const [providerMigrationRequired, setProviderMigrationRequired] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -89,6 +90,7 @@ function SettingsPage() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error ?? "Could not load provider settings.");
         if (active) {
+          setProviderMigrationRequired(result.migrationRequired === true);
           setProviderSettings({
             textProvider: result.textProvider,
             textModel: result.textModel || defaultModels[result.textProvider as TextProvider],
@@ -218,6 +220,11 @@ function SettingsPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Game AI uses your selected provider key, not the app owner's Lovable credits. Keys are stored privately and never sent back to this page after saving. Provider free tiers, limits, and pricing can change.
           </p>
+          {providerMigrationRequired && (
+            <p role="status" className="mt-3 rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+              AI provider settings are not initialized yet. The app owner needs to apply database migration 0007 before keys or AI features can be used. Your existing chats and saved history are unaffected.
+            </p>
+          )}
         </div>
         {(["groq", "gemini", "openrouter", "pollinations"] as const).map((provider) => (
           <div key={provider} className="space-y-2 rounded-2xl bg-muted/50 p-4">
