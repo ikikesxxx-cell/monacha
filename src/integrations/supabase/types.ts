@@ -56,6 +56,38 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_shares: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          include_history: boolean
+          owner_id: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          include_history?: boolean
+          owner_id?: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          include_history?: boolean
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_shares_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_memories: {
         Row: {
           character_id: string
@@ -97,6 +129,38 @@ export type Database = {
             columns: ["last_message_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_scenes: {
+        Row: {
+          character_id: string
+          location: string
+          storage_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          location: string
+          storage_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          location?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_scenes_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
             referencedColumns: ["id"]
           },
         ]
@@ -183,6 +247,39 @@ export type Database = {
           },
         ]
       }
+      player_ai_settings: {
+        Row: {
+          gemini_api_key: string | null
+          groq_api_key: string | null
+          openrouter_api_key: string | null
+          pollinations_api_key: string | null
+          text_model: string
+          text_provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          gemini_api_key?: string | null
+          groq_api_key?: string | null
+          openrouter_api_key?: string | null
+          pollinations_api_key?: string | null
+          text_model?: string
+          text_provider?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          gemini_api_key?: string | null
+          groq_api_key?: string | null
+          openrouter_api_key?: string | null
+          pollinations_api_key?: string | null
+          text_model?: string
+          text_provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -262,6 +359,11 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_shared_character: { Args: { _character_id: string }; Returns: boolean }
+      is_shared_history: {
+        Args: { _character_id: string; _user_id: string }
         Returns: boolean
       }
     }
