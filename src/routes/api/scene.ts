@@ -53,7 +53,7 @@ export const Route = createFileRoute("/api/scene")({
         }
 
         const { getPollinationsApiKey, MissingPlayerProviderKeyError } = await import("@/lib/server/player-ai.server");
-        let apiKey: string;
+        let apiKey: string | null;
         try {
           apiKey = await getPollinationsApiKey(session.user.id);
         } catch (error) {

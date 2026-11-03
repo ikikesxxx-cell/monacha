@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/avatar")({
           return Response.json({ error: "Describe the photo or add a real photo first." }, { status: 400 });
         }
 
-        let apiKey: string;
+        let apiKey: string | null;
         try {
           apiKey = await getPollinationsApiKey(session.user.id);
         } catch (error) {
