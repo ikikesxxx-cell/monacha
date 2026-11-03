@@ -101,38 +101,6 @@ export type Database = {
           },
         ]
       }
-      conversation_scenes: {
-        Row: {
-          character_id: string
-          location: string
-          storage_path: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          character_id: string
-          location: string
-          storage_path: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          character_id?: string
-          location?: string
-          storage_path?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_scenes_character_id_fkey"
-            columns: ["character_id"]
-            isOneToOne: false
-            referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       messages: {
         Row: {
           character_id: string
@@ -214,39 +182,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      player_ai_settings: {
-        Row: {
-          gemini_api_key: string | null
-          groq_api_key: string | null
-          openrouter_api_key: string | null
-          pollinations_api_key: string | null
-          text_model: string
-          text_provider: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          gemini_api_key?: string | null
-          groq_api_key?: string | null
-          openrouter_api_key?: string | null
-          pollinations_api_key?: string | null
-          text_model?: string
-          text_provider?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          gemini_api_key?: string | null
-          groq_api_key?: string | null
-          openrouter_api_key?: string | null
-          pollinations_api_key?: string | null
-          text_model?: string
-          text_provider?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
