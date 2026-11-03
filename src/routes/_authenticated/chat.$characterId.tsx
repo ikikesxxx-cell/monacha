@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoWindow } from "@/components/PhotoWindow";
 import { detectMood, music, trackFor } from "@/lib/music";
 import { toast } from "sonner";
-import { ArrowLeft, RotateCcw, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, RotateCcw, Share2, Sparkles, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { authHeaders, type Character } from "@/lib/api";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
@@ -173,6 +173,32 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
     qc.invalidateQueries({ queryKey: ["messages", character.id] });
   }
 
+  const [snap, setSnap] = useState<string | null>(null);
+  const [snapping, setSnapping] = useState(false);
+  async function takePhoto() {
+    setSnapping(true);
+    try {
+      const recentText = messages.slice(-4).map((m) => m.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ")).join(" ").slice(-700);
+      const form = new FormData();
+      form.set("prompt", `${character.name}. Appearance and personality: ${character.behavior.slice(0, 700)}. Current moment in the story: ${recentText}`);
+      const res = await fetch("/api/avatar", { method: "POST", headers: await authHeaders(), body: form });
+      const out = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !out.url) throw new Error(out.error ?? "Photo failed.");
+      setSnap(out.url);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally { setSnapping(false); }
+  }
+
+  async function share() {
+    const withHistory = confirm("Share WITH the chat history?\n\nOK = with history · Cancel = character only");
+    const { data, error } = await supabase.from("chat_shares").insert({ character_id: character.id, include_history: withHistory }).select("id").single();
+    if (error || !data) { toast.error("Only the maker of this character can share it."); return; }
+    const url = `${window.location.origin}/share/${data.id}`;
+    await navigator.clipboard.writeText(url).catch(() => {});
+    toast.success(`Share link copied${withHistory ? " (with history)" : ""}: ${url}`);
+  }
+
   async function remove() {
     if (!confirm(`Delete ${character.name} forever?`)) return;
     const { error } = await supabase.from("characters").delete().eq("id", character.id);
@@ -199,6 +225,14 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
           <div className="truncate text-sm text-muted-foreground">{character.tagline}</div>
         </div>
         <StoryMemory memory={memory} />
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={takePhoto} disabled={snapping} aria-label="Take a photo of this moment">
+          <Camera className={`h-5 w-5 ${snapping ? "animate-pulse" : ""}`} />
+        </Button>
+        {character.owner_id && (
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={share} aria-label="Share this chat">
+            <Share2 className="h-5 w-5" />
+          </Button>
+        )}
         <Button variant="ghost" size="icon" className="rounded-full" onClick={restart} disabled={busy} aria-label="Start over">
           <RotateCcw className="h-5 w-5" />
         </Button>
@@ -277,6 +311,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
           </PromptInputFooter>
         </PromptInput>
       </div>
+      {snap && <PhotoWindow src={snap} title={`${character.name} — this moment`} onClose={() => setSnap(null)} />}
       {pip && avatar && <PhotoWindow src={avatar} title={character.name} onClose={() => setPip(false)} />}
     </main>
   );

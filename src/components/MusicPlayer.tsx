@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Music, VolumeX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { music, useMusic } from "@/lib/music";
+import { DEFAULT_TRACK, music, useMusic } from "@/lib/music";
 
 export function MusicPlayer() {
   const { track, playing, enabled } = useMusic();
@@ -20,9 +20,21 @@ export function MusicPlayer() {
           key={track}
           title="Background music"
           className="pointer-events-none fixed -left-[9999px] h-px w-px"
-          src={`https://www.youtube.com/embed/${track}?autoplay=1&loop=1&playlist=${track}&controls=0`}
+          src={`https://www.youtube.com/embed/${track}?autoplay=1&loop=1&playlist=${track},${track}&controls=0&rel=0`}
           allow="autoplay"
         />
+      )}
+      {playing && (
+        <a
+          href={`https://www.youtube.com/watch?v=${track}`}
+          target="_blank"
+          rel="noreferrer"
+          className="fixed bottom-5 left-16 z-40 max-w-[16rem] truncate rounded-full bg-card/90 px-3 py-1 text-xs text-muted-foreground shadow-soft"
+        >
+          {track === DEFAULT_TRACK
+            ? "♪ “Dreamcore Playlist” by calm sense — not ours, all rights to the creator"
+            : "♪ Music from YouTube — not ours, all rights to its creator"}
+        </a>
       )}
       <button
         type="button"
