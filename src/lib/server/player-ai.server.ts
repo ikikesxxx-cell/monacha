@@ -37,7 +37,10 @@ export async function getPlayerAiSettings(userId: string): Promise<PlayerAiSetti
     .select("text_provider,text_model,groq_api_key,gemini_api_key,openrouter_api_key,pollinations_api_key")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error) throw new Error("Could not read your provider settings.");
+  if (error) {
+    console.error("could not read provider settings", error.code);
+    return null;
+  }
   return data as PlayerAiSettings | null;
 }
 
@@ -47,16 +50,16 @@ export async function getPlayerTextModel(userId: string): Promise<LanguageModel>
   const providerSettings = PROVIDERS[providerName];
   const apiKey = settings?.[`${providerName}_api_key` as "groq_api_key" | "gemini_api_key" | "openrouter_api_key"];
   if (!apiKey) {
-    throw new MissingPlayerProviderKeyError(providerName === "gemini" ? "Google Gemini" : providerName);
+    // Free fallback: no key needed, never uses workspace credits.
+    const free = createOpenAI({ baseURL: "https://text.pollinations.ai/openai", apiKey: "free" });
+    return free.chat("openai");
   }
   const provider = createOpenAI({ baseURL: providerSettings.baseURL, apiKey });
   return provider.chat(settings?.text_model?.trim() || providerSettings.defaultModel);
 }
 
-export async function getPollinationsApiKey(userId: string): Promise<string> {
+/** Returns the player's Pollinations key, or null to use the free no-key service. */
+export async function getPollinationsApiKey(userId: string): Promise<string | null> {
   const settings = await getPlayerAiSettings(userId);
-  if (!settings?.pollinations_api_key) {
-    throw new MissingPlayerProviderKeyError("Pollinations");
-  }
-  return settings.pollinations_api_key;
+  return settings?.pollinations_api_key || null;
 }

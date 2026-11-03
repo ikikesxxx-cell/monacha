@@ -56,6 +56,38 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_shares: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          include_history: boolean
+          owner_id: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          include_history?: boolean
+          owner_id?: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          include_history?: boolean
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_shares_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_memories: {
         Row: {
           character_id: string
@@ -327,6 +359,11 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_shared_character: { Args: { _character_id: string }; Returns: boolean }
+      is_shared_history: {
+        Args: { _character_id: string; _user_id: string }
         Returns: boolean
       }
     }

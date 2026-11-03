@@ -17,6 +17,7 @@ import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedGalleryRouteImport } from './routes/_authenticated/gallery'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSharedRouteImport } from './routes/_authenticated/shared'
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as AuthenticatedVaultRouteImport } from './routes/_authenticated/vault'
 import { Route as ApiAvatarRouteImport } from './routes/api/avatar'
@@ -25,6 +26,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiProviderSettingsRouteImport } from './routes/api/provider-settings'
 import { Route as ApiSceneRouteImport } from './routes/api/scene'
 import { Route as AuthenticatedChatCharacterIdRouteImport } from './routes/_authenticated/chat.$characterId'
+import { Route as AuthenticatedShareShareIdRouteImport } from './routes/_authenticated/share.$shareId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -63,6 +65,11 @@ const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSharedRoute = AuthenticatedSharedRouteImport.update({
+  id: '/shared',
+  path: '/shared',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
@@ -106,6 +113,12 @@ const AuthenticatedChatCharacterIdRoute =
     path: '/chat/$characterId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedShareShareIdRoute =
+  AuthenticatedShareShareIdRouteImport.update({
+    id: '/share/$shareId',
+    path: '/share/$shareId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/gallery': typeof AuthenticatedGalleryRoute
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/shared': typeof AuthenticatedSharedRoute
   '/studio': typeof AuthenticatedStudioRoute
   '/vault': typeof AuthenticatedVaultRoute
   '/api/avatar': typeof ApiAvatarRoute
@@ -123,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/api/provider-settings': typeof ApiProviderSettingsRoute
   '/api/scene': typeof ApiSceneRoute
   '/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
+  '/share/$shareId': typeof AuthenticatedShareShareIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -132,6 +147,7 @@ export interface FileRoutesByTo {
   '/gallery': typeof AuthenticatedGalleryRoute
   '/review': typeof AuthenticatedReviewRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/shared': typeof AuthenticatedSharedRoute
   '/studio': typeof AuthenticatedStudioRoute
   '/vault': typeof AuthenticatedVaultRoute
   '/api/avatar': typeof ApiAvatarRoute
@@ -140,6 +156,7 @@ export interface FileRoutesByTo {
   '/api/provider-settings': typeof ApiProviderSettingsRoute
   '/api/scene': typeof ApiSceneRoute
   '/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
+  '/share/$shareId': typeof AuthenticatedShareShareIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -151,6 +168,7 @@ export interface FileRoutesById {
   '/_authenticated/gallery': typeof AuthenticatedGalleryRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/shared': typeof AuthenticatedSharedRoute
   '/_authenticated/studio': typeof AuthenticatedStudioRoute
   '/_authenticated/vault': typeof AuthenticatedVaultRoute
   '/api/avatar': typeof ApiAvatarRoute
@@ -159,6 +177,7 @@ export interface FileRoutesById {
   '/api/provider-settings': typeof ApiProviderSettingsRoute
   '/api/scene': typeof ApiSceneRoute
   '/_authenticated/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
+  '/_authenticated/share/$shareId': typeof AuthenticatedShareShareIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,6 +189,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/review'
     | '/settings'
+    | '/shared'
     | '/studio'
     | '/vault'
     | '/api/avatar'
@@ -178,6 +198,7 @@ export interface FileRouteTypes {
     | '/api/provider-settings'
     | '/api/scene'
     | '/chat/$characterId'
+    | '/share/$shareId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -187,6 +208,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/review'
     | '/settings'
+    | '/shared'
     | '/studio'
     | '/vault'
     | '/api/avatar'
@@ -195,6 +217,7 @@ export interface FileRouteTypes {
     | '/api/provider-settings'
     | '/api/scene'
     | '/chat/$characterId'
+    | '/share/$shareId'
   id:
     | '__root__'
     | '/'
@@ -205,6 +228,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gallery'
     | '/_authenticated/review'
     | '/_authenticated/settings'
+    | '/_authenticated/shared'
     | '/_authenticated/studio'
     | '/_authenticated/vault'
     | '/api/avatar'
@@ -213,6 +237,7 @@ export interface FileRouteTypes {
     | '/api/provider-settings'
     | '/api/scene'
     | '/_authenticated/chat/$characterId'
+    | '/_authenticated/share/$shareId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -284,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/shared': {
+      id: '/_authenticated/shared'
+      path: '/shared'
+      fullPath: '/shared'
+      preLoaderRoute: typeof AuthenticatedSharedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/studio': {
       id: '/_authenticated/studio'
       path: '/studio'
@@ -340,6 +372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatCharacterIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/share/$shareId': {
+      id: '/_authenticated/share/$shareId'
+      path: '/share/$shareId'
+      fullPath: '/share/$shareId'
+      preLoaderRoute: typeof AuthenticatedShareShareIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -349,9 +388,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGalleryRoute: typeof AuthenticatedGalleryRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSharedRoute: typeof AuthenticatedSharedRoute
   AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
   AuthenticatedVaultRoute: typeof AuthenticatedVaultRoute
   AuthenticatedChatCharacterIdRoute: typeof AuthenticatedChatCharacterIdRoute
+  AuthenticatedShareShareIdRoute: typeof AuthenticatedShareShareIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -360,9 +401,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGalleryRoute: AuthenticatedGalleryRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSharedRoute: AuthenticatedSharedRoute,
   AuthenticatedStudioRoute: AuthenticatedStudioRoute,
   AuthenticatedVaultRoute: AuthenticatedVaultRoute,
   AuthenticatedChatCharacterIdRoute: AuthenticatedChatCharacterIdRoute,
+  AuthenticatedShareShareIdRoute: AuthenticatedShareShareIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -57,6 +57,13 @@
       "when": 1793631060000,
       "tag": "0007_player_ai_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793691736663,
+      "tag": "0008_owner_sharing_and_chat_shares",
+      "breakpoints": true
     }
   ]
 }

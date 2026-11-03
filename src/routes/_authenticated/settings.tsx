@@ -218,7 +218,7 @@ function SettingsPage() {
         <div>
           <h2 className="text-xl font-semibold">AI provider keys</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Game AI uses your selected provider key, not the app owner's Lovable credits. Keys are stored privately and never sent back to this page after saving. Provider free tiers, limits, and pricing can change.
+            Chat and photos work for free with no key at all. Adding your own key is optional and can give better quality. Keys are stored privately and never sent back to this page after saving. Provider free tiers, limits, and pricing can change.
           </p>
           {providerMigrationRequired && (
             <p role="status" className="mt-3 rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">

@@ -10,4 +10,4 @@
 - [x] Floating movable/resizable photo window in chat
 - [x] Create: 3 modes (solo / AI follows orders / think together), Rules tab locked during play, no-photo option
 - [x] Background music (default YouTube track), off switch in settings, creator mood tracks
-- [ ] Scene photos, player portrait, public/private characters, owner-only board, suggestion card
+- [x] Vault requests: music loop + credits, shared owner tab, in-chat photo button, free AI fallback, share chats
