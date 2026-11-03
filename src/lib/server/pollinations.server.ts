@@ -28,14 +28,17 @@ export async function generatePollinationsImage({
   signal,
 }: {
   prompt: string;
-  apiKey: string;
+  apiKey: string | null;
   reference?: File;
   width?: number;
   height?: number;
   signal?: AbortSignal;
 }): Promise<PollinationsImage> {
   let response: Response;
-  if (reference) {
+  if (!apiKey) {
+    const query = new URLSearchParams({ model: "flux", width: String(width), height: String(height), nologo: "true", private: "true" });
+    response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.slice(0, 1800))}?${query}`, { signal: signal ?? null });
+  } else if (reference) {
     const form = new FormData();
     form.set("model", IMAGE_MODEL);
     form.set("prompt", prompt);
