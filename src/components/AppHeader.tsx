@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, Images, Library, Lock, Plus, Settings, Users } from "lucide-react";
+import { Camera, Images, Library, Lock, Plus, Settings, Share2, Users } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { ownerQuery } from "@/lib/owner";
 
@@ -35,6 +35,11 @@ export function AppHeader() {
           {owner.data && (
             <Link to="/vault" className={link} activeProps={active}>
               <Lock className="h-4 w-4" /> <span className="hidden sm:inline">Vault</span>
+            </Link>
+          )}
+          {owner.data && (
+            <Link to="/shared" className={link} activeProps={active}>
+              <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">Shared</span>
             </Link>
           )}
           <Link to="/settings" className={link} activeProps={active}>
