@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, Images, Library, Lock, Plus, Settings, Share2, Users } from "lucide-react";
+import { Camera, Globe, Images, Library, Lock, Plus, Settings, Share2, Users } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { ownerQuery } from "@/lib/owner";
 
