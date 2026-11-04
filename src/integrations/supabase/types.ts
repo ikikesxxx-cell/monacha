@@ -354,6 +354,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_chat_share: {
+        Args: { p_share_id: string }
+        Returns: {
+          character_id: string
+          id: string
+          include_history: boolean
+          owner_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

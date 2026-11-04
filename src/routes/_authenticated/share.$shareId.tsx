@@ -22,7 +22,8 @@ function SharePage() {
   const q = useQuery({
     queryKey: ["share", shareId],
     queryFn: async () => {
-      const { data: share } = await supabase.from("chat_shares").select("*").eq("id", shareId).maybeSingle();
+      const { data: rows } = await supabase.rpc("get_chat_share", { p_share_id: shareId });
+      const share = rows?.[0];
       if (!share) return null;
       const { data: c } = await supabase.from("characters").select("*").eq("id", share.character_id).maybeSingle();
       const { data: msgs } = share.include_history

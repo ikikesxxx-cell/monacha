@@ -64,6 +64,13 @@
       "when": 1793691736663,
       "tag": "0008_owner_sharing_and_chat_shares",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793792749876,
+      "tag": "0009_lock_chat_shares",
+      "breakpoints": true
     }
   ]
 }
