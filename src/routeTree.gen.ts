@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedCharactersRouteImport } from './routes/_authenticated/characters'
+import { Route as AuthenticatedChatsRouteImport } from './routes/_authenticated/chats'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedGalleryRouteImport } from './routes/_authenticated/gallery'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
@@ -45,6 +46,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedCharactersRoute = AuthenticatedCharactersRouteImport.update({
   id: '/characters',
   path: '/characters',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedChatsRoute = AuthenticatedChatsRouteImport.update({
+  id: '/chats',
+  path: '/chats',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/characters': typeof AuthenticatedCharactersRoute
+  '/chats': typeof AuthenticatedChatsRoute
   '/create': typeof AuthenticatedCreateRoute
   '/gallery': typeof AuthenticatedGalleryRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/characters': typeof AuthenticatedCharactersRoute
+  '/chats': typeof AuthenticatedChatsRoute
   '/create': typeof AuthenticatedCreateRoute
   '/gallery': typeof AuthenticatedGalleryRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/characters': typeof AuthenticatedCharactersRoute
+  '/_authenticated/chats': typeof AuthenticatedChatsRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/gallery': typeof AuthenticatedGalleryRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/characters'
+    | '/chats'
     | '/create'
     | '/gallery'
     | '/review'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/characters'
+    | '/chats'
     | '/create'
     | '/gallery'
     | '/review'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/characters'
+    | '/_authenticated/chats'
     | '/_authenticated/create'
     | '/_authenticated/gallery'
     | '/_authenticated/review'
@@ -279,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/characters'
       fullPath: '/characters'
       preLoaderRoute: typeof AuthenticatedCharactersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/chats': {
+      id: '/_authenticated/chats'
+      path: '/chats'
+      fullPath: '/chats'
+      preLoaderRoute: typeof AuthenticatedChatsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/create': {
@@ -384,6 +403,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCharactersRoute: typeof AuthenticatedCharactersRoute
+  AuthenticatedChatsRoute: typeof AuthenticatedChatsRoute
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedGalleryRoute: typeof AuthenticatedGalleryRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
@@ -397,6 +417,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCharactersRoute: AuthenticatedCharactersRoute,
+  AuthenticatedChatsRoute: AuthenticatedChatsRoute,
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedGalleryRoute: AuthenticatedGalleryRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,

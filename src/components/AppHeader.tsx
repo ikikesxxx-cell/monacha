@@ -20,6 +20,9 @@ export function AppHeader() {
           <Link to="/characters" className={link} activeProps={active}>
             <Users className="h-4 w-4" /> <span className="hidden sm:inline">Characters</span>
           </Link>
+          <Link to="/chats" className={link} activeProps={active}>
+            <Globe className="h-4 w-4" /> <span className="hidden sm:inline">Chats</span>
+          </Link>
           <Link to="/create" className={link} activeProps={active}>
             <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Create</span>
           </Link>
