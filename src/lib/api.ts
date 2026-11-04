@@ -16,4 +16,6 @@ export type Character = {
   rules?: string;
   avatar_kind?: string;
   music?: Record<string, string> | null;
+  is_public?: boolean;
+  created_at?: string;
 };
