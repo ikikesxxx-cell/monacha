@@ -141,6 +141,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
     transport,
     onData: (part) => {
       if (part.type === "data-memory-status") setReadingMemory(true);
+      if (part.type === "data-ai-warning") toast.warning(String((part.data as { message?: string })?.message ?? ""));
       if (part.type === "data-story-memory") {
         const nextMemory = normalizeMemory(part.data);
         setMemory(nextMemory);

@@ -44,18 +44,52 @@ export async function getPlayerAiSettings(userId: string): Promise<PlayerAiSetti
   return data as PlayerAiSettings | null;
 }
 
-export async function getPlayerTextModel(userId: string): Promise<LanguageModel> {
+/**
+ * Ordered chain from best to worst: chosen provider, the player's other keyed providers,
+ * then the free no-key service. Each step is tried when the previous one fails to start.
+ */
+export async function getPlayerTextModel(
+  userId: string,
+  onFallback?: (message: string) => void,
+): Promise<LanguageModel> {
   const settings = await getPlayerAiSettings(userId);
-  const providerName = settings?.text_provider ?? "gemini";
-  const providerSettings = PROVIDERS[providerName];
-  const apiKey = settings?.[`${providerName}_api_key` as "groq_api_key" | "gemini_api_key" | "openrouter_api_key"];
-  if (!apiKey) {
-    // Free fallback: no key needed, never uses workspace credits.
-    const free = createOpenAI({ baseURL: "https://text.pollinations.ai/openai", apiKey: "free" });
-    return free.chat("openai");
+  const chosen = settings?.text_provider ?? "gemini";
+  const order = [chosen, ...TEXT_PROVIDERS.filter((p) => p !== chosen)];
+  const chain: { label: string; model: any }[] = [];
+  for (const name of order) {
+    const apiKey = settings?.[`${name}_api_key` as "groq_api_key"];
+    if (!apiKey) continue;
+    const provider = createOpenAI({ baseURL: PROVIDERS[name].baseURL, apiKey });
+    const modelId = name === chosen ? settings?.text_model?.trim() || PROVIDERS[name].defaultModel : PROVIDERS[name].defaultModel;
+    chain.push({ label: name, model: provider.chat(modelId) });
   }
-  const provider = createOpenAI({ baseURL: providerSettings.baseURL, apiKey });
-  return provider.chat(settings?.text_model?.trim() || providerSettings.defaultModel);
+  const free = createOpenAI({ baseURL: "https://text.pollinations.ai/openai", apiKey: "free" });
+  chain.push({ label: "free backup", model: free.chat("openai") });
+  if (chain.length === 1) return chain[0]!.model;
+
+  const run = async (method: "doStream" | "doGenerate", options: unknown) => {
+    let lastError: unknown;
+    for (let i = 0; i < chain.length; i++) {
+      try {
+        const result = await chain[i]!.model[method](options);
+        if (i > 0) onFallback?.(`Your ${chain[0]!.label} AI is unavailable (limit or key problem), so this reply used ${chain[i]!.label} — quality may be lower.`);
+        return result;
+      } catch (error) {
+        lastError = error;
+        if ((options as { abortSignal?: AbortSignal })?.abortSignal?.aborted) throw error;
+      }
+    }
+    throw lastError;
+  };
+  const primary = chain[0]!.model;
+  return {
+    specificationVersion: primary.specificationVersion,
+    provider: primary.provider,
+    modelId: primary.modelId,
+    supportedUrls: primary.supportedUrls,
+    doGenerate: (options: unknown) => run("doGenerate", options),
+    doStream: (options: unknown) => run("doStream", options),
+  } as LanguageModel;
 }
 
 /** Returns the player's Pollinations key, or null to use the free no-key service. */

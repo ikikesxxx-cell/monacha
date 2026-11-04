@@ -71,7 +71,8 @@ export const Route = createFileRoute("/api/avatar")({
             ? `Edit this photo. The change request may be short and casual (e.g. "longer hair") — interpret it naturally. Apply ONLY this change: ${change}. Keep everything else identical — same person or animal, face, skin tone, pose, lighting, background and photo style. Keep it ultra-realistic, sharp and high detail, never blurry.`
             : hasRef
               ? `Study the reference photo (subject, features, lighting, setting) and create a brand-new, original ultra-realistic portrait photograph inspired by it — not a copy. Subject: ${subject}.`
-              : `Ultra realistic portrait photograph, natural lighting, tack-sharp focus, high detail, crisp textures, no blur, no grain, looking at the camera, square framing. Subject: ${subject}.`,
+              : `Candid raw photo taken on a smartphone, unedited, documentary style, natural daylight, sharp focus. Subject: ${subject}.`,
+          "Real human skin: visible pores, fine wrinkles, uneven skin tone, slight redness, tiny moles, peach fuzz, natural oil shine, flyaway hairs, imperfect teeth and eyebrows. NOT a 3D render, NOT CGI, NOT digital art, NOT a doll, no smooth plastic or waxy skin, no beauty filter, no airbrushing, no makeup-ad look.",
           editing ? "" : fidelity,
           "Make it look like a real, imperfect living being — never a flawless, airbrushed or plastic face. Include natural skin texture and visible pores, slight facial asymmetry, small blemishes, freckles, fine lines or stray hairs, uneven natural lighting and real-world details. Perfect symmetry or doll-like smoothness is wrong.",
           editing ? "" : learning,
@@ -80,13 +81,21 @@ export const Route = createFileRoute("/api/avatar")({
           .join(" ");
 
         let image: Awaited<ReturnType<typeof generatePollinationsImage>>;
+        let warning: string | null = null;
         try {
-          image = await generatePollinationsImage({
-            prompt: fullPrompt,
-            apiKey,
-            ...(hasRef && reference instanceof File ? { reference } : {}),
-            signal: request.signal,
-          });
+          try {
+            image = await generatePollinationsImage({
+              prompt: fullPrompt,
+              apiKey,
+              ...(hasRef && reference instanceof File ? { reference } : {}),
+              signal: request.signal,
+            });
+          } catch (first) {
+            if (!apiKey) throw first;
+            // Your key failed (budget empty / limit) → fall back to the free public server.
+            image = await generatePollinationsImage({ prompt: fullPrompt, apiKey: null, signal: request.signal });
+            warning = "Your Pollinations key ran out, so this photo used the free backup (lower quality).";
+          }
         } catch (error) {
           if (error instanceof PollinationsRequestError) {
             console.error("image generation failed", error.status);
@@ -121,7 +130,7 @@ export const Route = createFileRoute("/api/avatar")({
           from_reference: hasRef,
         });
         if (logError) console.error("could not record generation for review", logError);
-        return Response.json({ url: signed.signedUrl });
+        return Response.json({ url: signed.signedUrl, warning });
       },
       DELETE: async ({ request }) => {
         const { getRequestUser } = await import("@/lib/server/user");

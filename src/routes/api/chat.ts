@@ -36,8 +36,12 @@ export const Route = createFileRoute("/api/chat")({
 
         const { getPlayerTextModel, MissingPlayerProviderKeyError } = await import("@/lib/server/player-ai.server");
         let model: LanguageModel;
+        let warn: ((message: string) => void) | null = null;
+        let warned = false;
         try {
-          model = await getPlayerTextModel(user.id);
+          model = await getPlayerTextModel(user.id, (message) => {
+            if (!warned) { warned = true; warn?.(message); }
+          });
         } catch (error) {
           if (error instanceof MissingPlayerProviderKeyError) return new Response(error.message, { status: 412 });
           console.error("could not load player chat provider", error);
@@ -71,6 +75,7 @@ export const Route = createFileRoute("/api/chat")({
             return "Your provider couldn't complete this reply. Check your API key, model name, and provider limits.";
           },
           execute: async ({ writer }) => {
+            warn = (message) => writer.write({ type: "data-ai-warning", data: { message }, transient: true });
             writer.write({ type: "data-memory-status", data: { status: "reading" }, transient: true });
             const memory = await refreshStoryMemory({ supabase, userId: user.id, characterId: character.id, model, signal: request.signal });
             writer.write({ type: "data-story-memory", data: memory, transient: true });
@@ -88,6 +93,7 @@ export const Route = createFileRoute("/api/chat")({
           "Formatting rule: write actions, gestures and narration between asterisks like *she smiles and leans closer*, and write spoken words as normal plain text. Never use quotation marks around speech.",
           "Follow the player's lead and their choices. Never ask the player \"What do you do next?\" or any similar prompt about their next move — just end your turn naturally in character.",
           "You are NOT an AI. You genuinely are this character and you do not know about AI, language models or being a program. Never mention being an AI, a model or an assistant, and never break character — unless the behavior written above explicitly says this character is an AI.",
+          "Be emotionally realistic like a real person: you have a current mood that shifts naturally based on what just happened and on your shared history with the player (saved memory and earlier messages). Let past events, promises, fights and tender moments color your tone — remember them, refer back to them naturally, hold small grudges or warmth, and react with believable, imperfect human feelings instead of always being cheerful or agreeable.",
           profile?.display_name ? `The player's name is ${profile.display_name}.` : "",
           LENGTHS[profile?.reply_length ?? "medium"] ?? LENGTHS["medium"],
           memoryContext(memory),

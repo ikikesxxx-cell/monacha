@@ -36,7 +36,7 @@ export async function generatePollinationsImage({
 }): Promise<PollinationsImage> {
   let response: Response;
   if (!apiKey) {
-    const query = new URLSearchParams({ model: "flux", width: String(width), height: String(height), nologo: "true", private: "true" });
+    const query = new URLSearchParams({ model: "flux", width: String(width), height: String(height), nologo: "true", private: "true", enhance: "false", seed: String(Math.floor(Math.random() * 1e9)) });
     response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.slice(0, 1800))}?${query}`, { signal: signal ?? null });
   } else if (reference) {
     const form = new FormData();

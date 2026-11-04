@@ -62,6 +62,7 @@ function StudioPage() {
       const res = await fetch("/api/avatar", { method: "POST", headers: await authHeaders(), body: form });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Photo generation failed.");
+      if (json.warning) toast.warning(json.warning);
       setHistory((h) => (mode === "new" ? [json.url] : [...h, json.url]));
       if (mode === "edit") setChange("");
     } catch (e) {
