@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PhotoWindow } from "@/components/PhotoWindow";
 import { detectMood, music, trackFor } from "@/lib/music";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, RotateCcw, Share2, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, RotateCcw, Share2, Sparkles, Trash2, UserRound, Lightbulb } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { authHeaders, type Character } from "@/lib/api";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
@@ -150,7 +150,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
       }
     },
     onError: (e) => { setReadingMemory(false); toast.error(e.message || "Something went wrong."); },
-    onFinish: () => qc.invalidateQueries({ queryKey: ["messages", character.id] }),
+    onFinish: () => { qc.invalidateQueries({ queryKey: ["messages", character.id] }); void loadSuggestions(); },
   });
   const busy = status === "submitted" || status === "streaming";
   const entity = character.avatar_kind === "none";
@@ -176,12 +176,49 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
 
   const [snap, setSnap] = useState<string | null>(null);
   const [snapping, setSnapping] = useState(false);
-  async function takePhoto() {
+  const [camMenu, setCamMenu] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+  async function loadSuggestions() {
+    setSuggesting(true);
+    try {
+      const res = await fetch("/api/suggest", { method: "POST", headers: { "Content-Type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ characterId: character.id }) });
+      const out = (await res.json().catch(() => ({}))) as { suggestions?: string[] };
+      setSuggestions(out.suggestions ?? []);
+    } catch { setSuggestions([]); } finally { setSuggesting(false); }
+  }
+  const [personaOpen, setPersonaOpen] = useState(false);
+  const [persona, setPersona] = useState("");
+  useEffect(() => {
+    void (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data } = await supabase.from("profiles").select("persona_look").eq("id", u.user.id).maybeSingle();
+      setPersona(data?.persona_look ?? "");
+    })();
+  }, []);
+  async function savePersona() {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    const { error } = await supabase.from("profiles").update({ persona_look: persona.slice(0, 1000) }).eq("id", u.user.id);
+    if (error) { toast.error("Couldn't save your look."); return; }
+    toast.success("Saved — characters now know what you look like.");
+    setPersonaOpen(false);
+  }
+  async function takePhoto(view: "portrait" | "two-shot" | "scene") {
+    setCamMenu(false);
     setSnapping(true);
     try {
       const recentText = messages.slice(-4).map((m) => m.parts.map((p) => (p.type === "text" ? p.text : "")).join(" ")).join(" ").slice(-700);
       const form = new FormData();
-      form.set("prompt", `${character.name}. Appearance and personality: ${character.behavior.slice(0, 700)}. Current moment in the story: ${recentText}`);
+      const look = `${character.name}. Appearance and personality: ${character.behavior.slice(0, 600)}.`;
+      const moment = `Current moment in the story: ${recentText}`;
+      const framing = view === "portrait"
+        ? `First-person POV close portrait looking straight at ${look} ${moment}`
+        : view === "two-shot"
+          ? `Two people together in one candid photo: ${look} Together with the player, who looks like: ${persona.trim() || "an ordinary adult"}. ${moment}`
+          : `Wide cinematic establishing shot of the surroundings, environment, weather and atmosphere, the character small in frame: ${look} ${moment}`;
+      form.set("prompt", framing);
       const res = await fetch("/api/avatar", { method: "POST", headers: await authHeaders(), body: form });
       const out = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
       if (!res.ok || !out.url) throw new Error(out.error ?? "Photo failed.");
@@ -201,8 +238,8 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
   }
 
   async function remove() {
-    if (!confirm(`Delete ${character.name} forever?`)) return;
-    const { error } = await supabase.from("characters").delete().eq("id", character.id);
+    if (!confirm(`Move ${character.name} to the trash? You can restore it from your characters page.`)) return;
+    const { error } = await supabase.from("characters").update({ deleted_at: new Date().toISOString() }).eq("id", character.id);
     if (error) { toast.error("Couldn't delete."); return; }
     await qc.invalidateQueries({ queryKey: ["characters"] });
     navigate({ to: "/characters" });
@@ -226,9 +263,21 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
           <div className="truncate text-sm text-muted-foreground">{character.tagline}</div>
         </div>
         <StoryMemory memory={memory} />
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={takePhoto} disabled={snapping} aria-label="Take a photo of this moment">
-          <Camera className={`h-5 w-5 ${snapping ? "animate-pulse" : ""}`} />
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setPersonaOpen((v) => !v)} aria-label="Your look">
+          <UserRound className="h-5 w-5" />
         </Button>
+        <div className="relative">
+          <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setCamMenu((v) => !v)} disabled={snapping} aria-label="Take a photo of this moment">
+            <Camera className={`h-5 w-5 ${snapping ? "animate-pulse" : ""}`} />
+          </Button>
+          {camMenu && (
+            <div className="absolute right-0 z-20 mt-2 w-52 rounded-2xl border border-border bg-popover p-1 shadow-soft">
+              {([["portrait", "Portrait (your eyes)"], ["two-shot", "Two-shot (you + them)"], ["scene", "Cinematic scene"]] as const).map(([v, l]) => (
+                <button key={v} type="button" onClick={() => takePhoto(v)} className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted">{l}</button>
+              ))}
+            </div>
+          )}
+        </div>
         {character.owner_id && (
           <Button variant="ghost" size="icon" className="rounded-full" onClick={share} aria-label="Share this chat">
             <Share2 className="h-5 w-5" />
@@ -243,6 +292,18 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
           </Button>
         )}
       </div>
+      {personaOpen && (
+        <div className="mb-3 rounded-2xl bg-card p-3 shadow-soft">
+          <label htmlFor="persona" className="text-sm font-semibold">Your look (characters see this, and it's used in two-shot photos)</label>
+          <textarea id="persona" value={persona} onChange={(e) => setPersona(e.target.value)} rows={3} maxLength={1000}
+            placeholder="e.g. 24, tall, messy black hair, freckles, grey hoodie, scar on left eyebrow"
+            className="mt-2 w-full rounded-xl border border-border bg-background p-2 text-sm" />
+          <div className="mt-2 flex justify-end gap-2">
+            <Button size="sm" variant="ghost" className="rounded-full" onClick={() => setPersonaOpen(false)}>Close</Button>
+            <Button size="sm" className="rounded-full" onClick={savePersona}>Save</Button>
+          </div>
+        </div>
+      )}
       {sceneSetupNeeded && (
         <p className="mb-2 text-center text-xs text-muted-foreground">
           Add a Pollinations key in <Link to="/settings" className="underline">Settings</Link> to enable scene backgrounds.
@@ -292,11 +353,24 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
       </Conversation>
 
       <div className="py-4">
+        {!busy && messages.length > 0 && (
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            {suggestions.map((sug) => (
+              <button key={sug} type="button" onClick={() => { setSuggestions([]); sendMessage({ text: sug }); }}
+                className="rounded-full bg-card px-3 py-1.5 text-sm shadow-soft hover:bg-muted">{sug}</button>
+            ))}
+            <button type="button" onClick={loadSuggestions} disabled={suggesting}
+              className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted">
+              <Lightbulb className={`h-3.5 w-3.5 ${suggesting ? "animate-pulse" : ""}`} /> {suggestions.length ? "New ideas" : "Ideas"}
+            </button>
+          </div>
+        )}
         <PromptInput
           onSubmit={(msg) => {
             const t = msg.text?.trim();
             if (!t || busy) return;
             sendMessage({ text: t });
+            setSuggestions([]);
             setText("");
           }}
           className="rounded-[1.5rem] bg-card shadow-soft"
