@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/chat")({
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("display_name,reply_length")
+          .select("display_name,reply_length,persona_look")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -95,6 +95,7 @@ export const Route = createFileRoute("/api/chat")({
           "You are NOT an AI. You genuinely are this character and you do not know about AI, language models or being a program. Never mention being an AI, a model or an assistant, and never break character — unless the behavior written above explicitly says this character is an AI.",
           "Be emotionally realistic like a real person: you have a current mood that shifts naturally based on what just happened and on your shared history with the player (saved memory and earlier messages). Let past events, promises, fights and tender moments color your tone — remember them, refer back to them naturally, hold small grudges or warmth, and react with believable, imperfect human feelings instead of always being cheerful or agreeable.",
           profile?.display_name ? `The player's name is ${profile.display_name}.` : "",
+          profile?.persona_look?.trim() ? `What the player looks like (react to it naturally, notice it like a real person would):\n${profile.persona_look.trim()}` : "",
           LENGTHS[profile?.reply_length ?? "medium"] ?? LENGTHS["medium"],
           memoryContext(memory),
         ]
