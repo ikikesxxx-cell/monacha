@@ -1,23 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const PROVIDERS = ["groq", "gemini", "openrouter", "pollinations"] as const;
+const PROVIDERS = ["groq", "gemini", "openrouter", "pollinations", "huggingface"] as const;
 const TEXT_PROVIDERS = ["groq", "gemini", "openrouter"] as const;
 type Provider = (typeof PROVIDERS)[number];
 type TextProvider = (typeof TEXT_PROVIDERS)[number];
 const EMPTY_SETTINGS = {
   textProvider: "gemini" as const,
   textModel: "",
-  configured: { groq: false, gemini: false, openrouter: false, pollinations: false },
+  configured: { groq: false, gemini: false, openrouter: false, pollinations: false, huggingface: false },
 };
 const MIGRATION_REQUIRED_MESSAGE = "AI provider settings are not initialized. Apply database migration 0007 and try again.";
 const migrationRequiredResponse = () =>
   Response.json({ error: MIGRATION_REQUIRED_MESSAGE, migrationRequired: true }, { status: 503 });
 const isMigrationMissing = (code: string) => code === "42P01" || code === "PGRST205";
-const KEY_COLUMNS: Record<Provider, "groq_api_key" | "gemini_api_key" | "openrouter_api_key" | "pollinations_api_key"> = {
+const KEY_COLUMNS: Record<Provider, "groq_api_key" | "gemini_api_key" | "openrouter_api_key" | "pollinations_api_key" | "huggingface_api_key"> = {
   groq: "groq_api_key",
   gemini: "gemini_api_key",
   openrouter: "openrouter_api_key",
   pollinations: "pollinations_api_key",
+  huggingface: "huggingface_api_key",
 };
 
 export const Route = createFileRoute("/api/provider-settings")({
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/api/provider-settings")({
 
         const { data, error } = await supabaseAdmin
           .from("player_ai_settings")
-          .select("text_provider,text_model,groq_api_key,gemini_api_key,openrouter_api_key,pollinations_api_key")
+          .select("text_provider,text_model,groq_api_key,gemini_api_key,openrouter_api_key,pollinations_api_key,huggingface_api_key")
           .eq("user_id", session.user.id)
           .maybeSingle();
         if (error) {
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/api/provider-settings")({
             gemini: Boolean(data?.gemini_api_key),
             openrouter: Boolean(data?.openrouter_api_key),
             pollinations: Boolean(data?.pollinations_api_key),
+            huggingface: Boolean(data?.huggingface_api_key),
           },
         });
       },
@@ -70,6 +72,7 @@ export const Route = createFileRoute("/api/provider-settings")({
           gemini_api_key?: string | null;
           openrouter_api_key?: string | null;
           pollinations_api_key?: string | null;
+          huggingface_api_key?: string | null;
           text_provider?: TextProvider;
           text_model?: string;
         } = { user_id: session.user.id, updated_at: new Date().toISOString() };
@@ -117,6 +120,7 @@ export const Route = createFileRoute("/api/provider-settings")({
           gemini_api_key: update.gemini_api_key ?? null,
           openrouter_api_key: update.openrouter_api_key ?? null,
           pollinations_api_key: update.pollinations_api_key ?? null,
+          huggingface_api_key: update.huggingface_api_key ?? null,
         };
         let error: { code: string } | null;
         if (existing) {
@@ -149,6 +153,7 @@ export const Route = createFileRoute("/api/provider-settings")({
           gemini: { gemini_api_key: null },
           openrouter: { openrouter_api_key: null },
           pollinations: { pollinations_api_key: null },
+          huggingface: { huggingface_api_key: null },
         }[body.provider as Provider];
         const { error } = await supabaseAdmin
           .from("player_ai_settings")

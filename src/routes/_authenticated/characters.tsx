@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { Plus, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Character } from "@/lib/api";
 import { ownerQuery } from "@/lib/owner";
@@ -48,9 +49,24 @@ function CharactersPage() {
   const { data: review } = useSuspenseQuery(reviewQuery);
   const due = isReviewDue(review.lastReviewAt, review.pending.length);
   const { data: me } = useSuspenseQuery(meQuery);
-  const mine = data.filter((c) => c.owner_id && c.owner_id === me);
-  const community = data.filter((c) => c.owner_id && c.owner_id !== me);
-  const starters = data.filter((c) => !c.owner_id);
+  const qc = useQueryClient();
+  const live = data.filter((c) => !c.deleted_at);
+  const trash = data.filter((c) => c.deleted_at && c.owner_id === me);
+  const mine = live.filter((c) => c.owner_id && c.owner_id === me);
+  const community = live.filter((c) => c.owner_id && c.owner_id !== me);
+  const starters = live.filter((c) => !c.owner_id);
+  async function restore(id: string) {
+    const { error } = await supabase.from("characters").update({ deleted_at: null }).eq("id", id);
+    if (error) { toast.error("Couldn't restore."); return; }
+    toast.success("Restored!");
+    await qc.invalidateQueries({ queryKey: ["characters"] });
+  }
+  async function purge(id: string, name: string) {
+    if (!confirm(`Delete ${name} forever? This also erases its chats and can't be undone.`)) return;
+    const { error } = await supabase.from("characters").delete().eq("id", id);
+    if (error) { toast.error("Couldn't delete."); return; }
+    await qc.invalidateQueries({ queryKey: ["characters"] });
+  }
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       {due && (
@@ -77,6 +93,22 @@ function CharactersPage() {
         <Section title="Made by other players">
           {community.map((c, i) => <Card key={c.id} c={c} tint={tints[(i + 2) % 4]!} />)}
         </Section>
+      )}
+      {trash.length > 0 && (
+        <section className="mt-12 rounded-[1.5rem] bg-card/60 p-5">
+          <h2 className="mb-3 text-xl font-semibold text-muted-foreground">Trash bin</h2>
+          <ul className="space-y-2">
+            {trash.map((c) => (
+              <li key={c.id} className="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">
+                <span className="font-semibold">{c.name}</span>
+                <span className="flex gap-2">
+                  <button type="button" onClick={() => restore(c.id)} className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-sm font-bold text-primary-foreground"><RotateCcw className="h-3.5 w-3.5" /> Restore</button>
+                  <button type="button" onClick={() => purge(c.id, c.name)} className="rounded-full px-3 py-1 text-sm text-destructive hover:bg-muted">Delete forever</button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </main>
   );

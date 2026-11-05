@@ -15,6 +15,7 @@ const providerNames = {
   gemini: "Google Gemini",
   openrouter: "OpenRouter",
   pollinations: "Pollinations",
+  huggingface: "Hugging Face (photo backup)",
 } as const;
 const textProviders = ["groq", "gemini", "openrouter"] as const;
 type Provider = keyof typeof providerNames;
@@ -70,13 +71,14 @@ function SettingsPage() {
   const [providerSettings, setProviderSettings] = useState<ProviderSettings>({
     textProvider: "gemini",
     textModel: defaultModels.gemini,
-    configured: { groq: false, gemini: false, openrouter: false, pollinations: false },
+    configured: { groq: false, gemini: false, openrouter: false, pollinations: false, huggingface: false },
   });
   const [apiKeys, setApiKeys] = useState<Record<Provider, string>>({
     groq: "",
     gemini: "",
     openrouter: "",
     pollinations: "",
+    huggingface: "",
   });
   const [providerLoading, setProviderLoading] = useState(true);
   const [providerBusy, setProviderBusy] = useState<Provider | "chat" | null>(null);
@@ -226,7 +228,7 @@ function SettingsPage() {
             </p>
           )}
         </div>
-        {(["groq", "gemini", "openrouter", "pollinations"] as const).map((provider) => (
+        {(["groq", "gemini", "openrouter", "pollinations", "huggingface"] as const).map((provider) => (
           <div key={provider} className="space-y-2 rounded-2xl bg-muted/50 p-4">
             <Label htmlFor={`key-${provider}`}>{providerNames[provider]} API key</Label>
             <Input
@@ -242,6 +244,7 @@ function SettingsPage() {
               <span className="text-xs text-muted-foreground">
                 {providerSettings.configured[provider] ? "Key saved" : "No key saved"}
                 {provider === "pollinations" && " · Photo and scene usage spends from your Pollinations budget"}
+                {provider === "huggingface" && " · Free hf_ token, used when Pollinations is out"}
               </span>
               <div className="flex gap-2">
                 <Button type="button" size="sm" variant="outline" className="rounded-full" disabled={providerBusy !== null || providerLoading || providerMigrationRequired || !apiKeys[provider].trim()} onClick={() => saveProviderKey(provider)}>

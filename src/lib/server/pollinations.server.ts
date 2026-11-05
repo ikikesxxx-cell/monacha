@@ -88,3 +88,19 @@ export async function generatePollinationsImage({
   }
   return { bytes, contentType: imageContentType };
 }
+
+/** Free Hugging Face FLUX.1-schnell generation (text-only) used as the second photo tier. */
+export async function generateHuggingFaceImage({ prompt, apiKey, signal }: { prompt: string; apiKey: string; signal?: AbortSignal }): Promise<PollinationsImage> {
+  const response = await fetch("https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", Accept: "image/png" },
+    body: JSON.stringify({ inputs: prompt.slice(0, 1800) }),
+    signal: signal ?? null,
+  });
+  if (!response.ok) throw new Error(`Hugging Face failed (${response.status}).`);
+  const type = (response.headers.get("content-type") ?? "image/png").split(";")[0]!.toLowerCase();
+  const contentType = type === "image/jpeg" || type === "image/webp" ? type : "image/png";
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.length === 0) throw new Error("Hugging Face returned no image.");
+  return { bytes, contentType };
+}

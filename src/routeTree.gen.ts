@@ -26,6 +26,7 @@ import { Route as ApiCharacterHelperRouteImport } from './routes/api/character-h
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiProviderSettingsRouteImport } from './routes/api/provider-settings'
 import { Route as ApiSceneRouteImport } from './routes/api/scene'
+import { Route as ApiSuggestRouteImport } from './routes/api/suggest'
 import { Route as AuthenticatedChatCharacterIdRouteImport } from './routes/_authenticated/chat.$characterId'
 import { Route as AuthenticatedShareShareIdRouteImport } from './routes/_authenticated/share.$shareId'
 
@@ -113,6 +114,11 @@ const ApiSceneRoute = ApiSceneRouteImport.update({
   path: '/api/scene',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSuggestRoute = ApiSuggestRouteImport.update({
+  id: '/api/suggest',
+  path: '/api/suggest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedChatCharacterIdRoute =
   AuthenticatedChatCharacterIdRouteImport.update({
     id: '/chat/$characterId',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/provider-settings': typeof ApiProviderSettingsRoute
   '/api/scene': typeof ApiSceneRoute
+  '/api/suggest': typeof ApiSuggestRoute
   '/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
   '/share/$shareId': typeof AuthenticatedShareShareIdRoute
 }
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/provider-settings': typeof ApiProviderSettingsRoute
   '/api/scene': typeof ApiSceneRoute
+  '/api/suggest': typeof ApiSuggestRoute
   '/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
   '/share/$shareId': typeof AuthenticatedShareShareIdRoute
 }
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/provider-settings': typeof ApiProviderSettingsRoute
   '/api/scene': typeof ApiSceneRoute
+  '/api/suggest': typeof ApiSuggestRoute
   '/_authenticated/chat/$characterId': typeof AuthenticatedChatCharacterIdRoute
   '/_authenticated/share/$shareId': typeof AuthenticatedShareShareIdRoute
 }
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/provider-settings'
     | '/api/scene'
+    | '/api/suggest'
     | '/chat/$characterId'
     | '/share/$shareId'
   fileRoutesByTo: FileRoutesByTo
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/provider-settings'
     | '/api/scene'
+    | '/api/suggest'
     | '/chat/$characterId'
     | '/share/$shareId'
   id:
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/provider-settings'
     | '/api/scene'
+    | '/api/suggest'
     | '/_authenticated/chat/$characterId'
     | '/_authenticated/share/$shareId'
   fileRoutesById: FileRoutesById
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiProviderSettingsRoute: typeof ApiProviderSettingsRoute
   ApiSceneRoute: typeof ApiSceneRoute
+  ApiSuggestRoute: typeof ApiSuggestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -384,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSceneRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/suggest': {
+      id: '/api/suggest'
+      path: '/api/suggest'
+      fullPath: '/api/suggest'
+      preLoaderRoute: typeof ApiSuggestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/chat/$characterId': {
       id: '/_authenticated/chat/$characterId'
       path: '/chat/$characterId'
@@ -441,6 +461,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiProviderSettingsRoute: ApiProviderSettingsRoute,
   ApiSceneRoute: ApiSceneRoute,
+  ApiSuggestRoute: ApiSuggestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -10,7 +10,7 @@ const sharedQuery = queryOptions({
   queryKey: ["owner-shared"],
   queryFn: async () => {
     const [{ data: chars, error }, { data: msgs, error: e2 }] = await Promise.all([
-      supabase.from("characters").select("*").not("owner_id", "is", null).order("created_at"),
+      supabase.from("characters").select("*").not("owner_id", "is", null).is("deleted_at", null).order("created_at"),
       supabase.from("messages").select("character_id,user_id,role,parts,created_at").order("created_at"),
     ]);
     if (error) throw error;
