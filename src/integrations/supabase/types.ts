@@ -20,6 +20,7 @@ export type Database = {
           avatar_url: string | null
           behavior: string
           created_at: string
+          deleted_at: string | null
           id: string
           is_public: boolean
           music: Json
@@ -33,6 +34,7 @@ export type Database = {
           avatar_url?: string | null
           behavior: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_public?: boolean
           music?: Json
@@ -46,6 +48,7 @@ export type Database = {
           avatar_url?: string | null
           behavior?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_public?: boolean
           music?: Json
@@ -165,6 +168,38 @@ export type Database = {
           },
         ]
       }
+      game_posts: {
+        Row: {
+          body: string
+          character_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          character_id: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Update: {
+          body?: string
+          character_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_posts_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           character_id: string
@@ -251,6 +286,7 @@ export type Database = {
         Row: {
           gemini_api_key: string | null
           groq_api_key: string | null
+          huggingface_api_key: string | null
           openrouter_api_key: string | null
           pollinations_api_key: string | null
           text_model: string
@@ -261,6 +297,7 @@ export type Database = {
         Insert: {
           gemini_api_key?: string | null
           groq_api_key?: string | null
+          huggingface_api_key?: string | null
           openrouter_api_key?: string | null
           pollinations_api_key?: string | null
           text_model?: string
@@ -271,6 +308,7 @@ export type Database = {
         Update: {
           gemini_api_key?: string | null
           groq_api_key?: string | null
+          huggingface_api_key?: string | null
           openrouter_api_key?: string | null
           pollinations_api_key?: string | null
           text_model?: string
@@ -287,6 +325,7 @@ export type Database = {
           id: string
           last_review_at: string | null
           music_enabled: boolean
+          persona_look: string
           reply_length: string
         }
         Insert: {
@@ -295,6 +334,7 @@ export type Database = {
           id: string
           last_review_at?: string | null
           music_enabled?: boolean
+          persona_look?: string
           reply_length?: string
         }
         Update: {
@@ -303,6 +343,7 @@ export type Database = {
           id?: string
           last_review_at?: string | null
           music_enabled?: boolean
+          persona_look?: string
           reply_length?: string
         }
         Relationships: []
@@ -361,6 +402,13 @@ export type Database = {
           id: string
           include_history: boolean
           owner_id: string
+        }[]
+      }
+      get_maker_names: {
+        Args: { _ids: string[] }
+        Returns: {
+          display_name: string
+          id: string
         }[]
       }
       has_role: {
