@@ -22,6 +22,7 @@ type PlayerAiSettings = {
   gemini_api_key: string | null;
   openrouter_api_key: string | null;
   pollinations_api_key: string | null;
+  huggingface_api_key: string | null;
 };
 
 export class MissingPlayerProviderKeyError extends Error {
@@ -34,7 +35,7 @@ export class MissingPlayerProviderKeyError extends Error {
 export async function getPlayerAiSettings(userId: string): Promise<PlayerAiSettings | null> {
   const { data, error } = await supabaseAdmin
     .from("player_ai_settings")
-    .select("text_provider,text_model,groq_api_key,gemini_api_key,openrouter_api_key,pollinations_api_key")
+    .select("text_provider,text_model,groq_api_key,gemini_api_key,openrouter_api_key,pollinations_api_key,huggingface_api_key")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {
@@ -96,4 +97,10 @@ export async function getPlayerTextModel(
 export async function getPollinationsApiKey(userId: string): Promise<string | null> {
   const settings = await getPlayerAiSettings(userId);
   return settings?.pollinations_api_key || null;
+}
+
+/** Returns the player's Hugging Face token (free photo backup), or null. */
+export async function getHuggingFaceApiKey(userId: string): Promise<string | null> {
+  const settings = await getPlayerAiSettings(userId);
+  return settings?.huggingface_api_key || null;
 }

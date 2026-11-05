@@ -91,10 +91,19 @@ export const Route = createFileRoute("/api/avatar")({
               signal: request.signal,
             });
           } catch (first) {
-            if (!apiKey) throw first;
-            // Your key failed (budget empty / limit) → fall back to the free public server.
-            image = await generatePollinationsImage({ prompt: fullPrompt, apiKey: null, signal: request.signal });
-            warning = "Your Pollinations key ran out, so this photo used the free backup (lower quality).";
+            // Tier 2: Hugging Face (if the player saved a free token). Tier 3: free public server.
+            const { getHuggingFaceApiKey } = await import("@/lib/server/player-ai.server");
+            const { generateHuggingFaceImage } = await import("@/lib/server/pollinations.server");
+            const hfKey = await getHuggingFaceApiKey(session.user.id);
+            try {
+              if (!hfKey) throw first;
+              image = await generateHuggingFaceImage({ prompt: fullPrompt, apiKey: hfKey, signal: request.signal });
+              warning = "Pollinations was unavailable, so this photo used your Hugging Face backup.";
+            } catch {
+              if (!apiKey && !hfKey) throw first;
+              image = await generatePollinationsImage({ prompt: fullPrompt, apiKey: null, signal: request.signal });
+              warning = "Your photo keys ran out, so this photo used the free backup (lower quality).";
+            }
           }
         } catch (error) {
           if (error instanceof PollinationsRequestError) {
