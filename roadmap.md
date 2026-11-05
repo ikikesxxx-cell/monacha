@@ -11,3 +11,5 @@
 - [x] Create: 3 modes (solo / AI follows orders / think together), Rules tab locked during play, no-photo option
 - [x] Background music (default YouTube track), off switch in settings, creator mood tracks
 - [x] Vault requests: music loop + credits, shared owner tab, in-chat photo button, free AI fallback, share chats
+- [x] Player look, idea chips, Hugging Face photo backup, trash bin, camera angles
+- [x] Chats tab: maker names + public wall per game
