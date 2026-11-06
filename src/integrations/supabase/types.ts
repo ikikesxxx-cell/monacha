@@ -318,6 +318,21 @@ export type Database = {
         }
         Relationships: []
       }
+      pro_votes: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -423,6 +438,7 @@ export type Database = {
         Args: { _character_id: string; _user_id: string }
         Returns: boolean
       }
+      pro_vote_count: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
