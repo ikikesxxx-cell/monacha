@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Character } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { ProVote } from "@/components/ProVote";
 
 type PublicCharacter = Character & { maker: string };
 
@@ -76,6 +77,7 @@ function ChatsPage() {
       <p className="mt-2 text-muted-foreground">
         Every published game, made by all players. Tap one to play it or talk with everyone on its public wall.
       </p>
+      <ProVote />
       {data.length === 0 ? (
         <div className="mt-10 rounded-[1.5rem] bg-card p-8 text-center shadow-soft">
           <p className="font-semibold">Nothing published yet.</p>
