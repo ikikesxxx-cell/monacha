@@ -27,7 +27,10 @@ export function ProVote() {
     const { error } = voted
       ? await supabase.from("pro_votes").delete().eq("user_id", u.user.id)
       : await supabase.from("pro_votes").insert({ user_id: u.user.id });
-    if (error) return toast.error("Could not save your vote");
+    if (error) {
+      toast.error("Could not save your vote");
+      return;
+    }
     toast.success(voted ? "Vote removed" : "Thanks for voting!");
     qc.invalidateQueries({ queryKey: ["pro-vote"] });
   }
