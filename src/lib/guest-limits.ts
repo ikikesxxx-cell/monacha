@@ -1,14 +1,17 @@
 /** Marker the chat server puts in front of the "guest pool is empty" reply so the chat screen can open the upgrade window. */
 export const GUEST_POOL_EMPTY = "GUEST_POOL_EMPTY";
 
-/** Size of the shared free-message pool that all guest players draw from. Signed-in players never spend from it. */
-export const GUEST_POOL_START = 10_000_000_000;
+/** Free messages each guest gets per day (resets at midnight UTC). Signed-in players are not limited. */
+export const GUEST_DAILY_MESSAGES = 50;
 
-/** Messages a guest adds to the shared pool by watching one sponsor clip (at most once per hour). */
-export const SPONSOR_CLIP_REWARD = 5;
+/** Extra messages a guest earns by watching one sponsor clip. */
+export const SPONSOR_CLIP_REWARD = 20;
 
 /** Seconds a sponsor clip must play before it pays out. */
-export const SPONSOR_CLIP_SECONDS = 15;
+export const SPONSOR_CLIP_SECONDS = 20;
+
+/** Most sponsor clips a guest can watch per day (50 + 3x20 = 110 messages max). */
+export const SPONSOR_CLIPS_PER_DAY = 3;
 
 /** Pro payment link. Empty until the real (Orange) payment link and QR code are added. */
 export const PRO_PAYMENT_LINK = "";

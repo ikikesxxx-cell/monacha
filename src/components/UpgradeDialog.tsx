@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { GoogleButton } from "@/components/GoogleButton";
-import { PRO_PAYMENT_LINK, SPONSOR_CLIP_REWARD, SPONSOR_CLIP_SECONDS } from "@/lib/guest-limits";
+import { PRO_PAYMENT_LINK, SPONSOR_CLIP_REWARD, SPONSOR_CLIP_SECONDS, SPONSOR_CLIPS_PER_DAY, GUEST_DAILY_MESSAGES } from "@/lib/guest-limits";
 
 /** Shown when guest messages run out, or when a player taps "Pro". Offers Google sign-in, Pro payment, or a sponsor clip. */
 export function UpgradeDialog({ open, onOpenChange, outOfMessages = false }: { open: boolean; onOpenChange: (open: boolean) => void; outOfMessages?: boolean }) {
@@ -29,8 +29,8 @@ export function UpgradeDialog({ open, onOpenChange, outOfMessages = false }: { o
       const { data, error } = await supabase.rpc("reward_sponsor_clip");
       setClipLeft(null);
       if (error) { toast.error("Couldn't add messages. Please try again."); return; }
-      if (!data) { toast.info("You can watch another clip in an hour."); return; }
-      toast.success(`Thanks! ${data} messages added for guests.`);
+      if (!data) { toast.info("You watched all clips for today. Come back tomorrow!"); return; }
+      toast.success(`Thanks! ${data} extra messages added for today.`);
       qc.invalidateQueries({ queryKey: ["guest-pool"] });
       onOpenChange(false);
     })();
@@ -42,11 +42,11 @@ export function UpgradeDialog({ open, onOpenChange, outOfMessages = false }: { o
       <DialogContent className="rounded-[2rem]">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">
-            {outOfMessages ? "The free guest messages ran out" : "Go Pro"}
+            {outOfMessages ? `You used your ${GUEST_DAILY_MESSAGES} free messages today` : "Go Pro"}
           </DialogTitle>
           <DialogDescription>
             {outOfMessages
-              ? "Sign in with Google to keep chatting for free, or unlock Pro."
+              ? "Watch a short clip for more, sign in with Google, or unlock Pro."
               : "Pro unlocks the best photos and smarter chats."}
           </DialogDescription>
         </DialogHeader>
@@ -70,7 +70,7 @@ export function UpgradeDialog({ open, onOpenChange, outOfMessages = false }: { o
           {guest && (
             <div className="rounded-2xl bg-card p-4 shadow-soft">
               <p className="flex items-center gap-2 text-sm font-semibold"><Clapperboard className="h-4 w-4 text-primary" /> Watch a sponsor clip</p>
-              <p className="mt-1 text-sm text-muted-foreground">Adds {SPONSOR_CLIP_REWARD} messages to the guest pool. Once per hour.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Adds {SPONSOR_CLIP_REWARD} messages. Up to {SPONSOR_CLIPS_PER_DAY} clips per day.</p>
               {clipLeft !== null ? (
                 <div className="mt-3 flex aspect-video items-center justify-center rounded-xl bg-muted text-sm text-muted-foreground" role="status">
                   Sponsor clip playing… {clipLeft}s
