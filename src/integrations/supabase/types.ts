@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      guest_pool: {
+        Row: { id: number; remaining: number; updated_at: string }
+        Insert: { id?: number; remaining: number; updated_at?: string }
+        Update: { id?: number; remaining?: number; updated_at?: string }
+        Relationships: []
+      }
       characters: {
         Row: {
           avatar_kind: string
@@ -439,6 +445,11 @@ export type Database = {
         Returns: boolean
       }
       pro_vote_count: { Args: never; Returns: number }
+      use_guest_message: { Args: never; Returns: boolean }
+      reward_sponsor_clip: { Args: never; Returns: number }
+      create_guest_claim: { Args: never; Returns: string }
+      claim_guest_progress: { Args: { _code: string }; Returns: boolean }
+      is_guest: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"

@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
+import { rememberGuestProgress } from "@/lib/guest";
 
 export function GoogleButton({ label = "Continue with Google" }: { label?: string }) {
   const [busy, setBusy] = useState(false);
@@ -14,6 +15,7 @@ export function GoogleButton({ label = "Continue with Google" }: { label?: strin
       className="h-12 rounded-full px-6 text-base shadow-soft"
       onClick={async () => {
         setBusy(true);
+        await rememberGuestProgress().catch(() => undefined);
         const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
         if (result.error) {
           toast.error("Google sign-in didn't work. Please try again.");

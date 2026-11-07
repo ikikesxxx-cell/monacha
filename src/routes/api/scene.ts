@@ -66,7 +66,7 @@ export const Route = createFileRoute("/api/scene")({
         let image: Awaited<ReturnType<typeof generatePollinationsImage>>;
         try {
           image = await generatePollinationsImage({
-            prompt: `A wide, cinematic, realistic environment background depicting ${location}. Focus on the place and atmosphere, with no text, borders, or user interface.`,
+            prompt: `A wide, realistic documentary photograph of the place: ${location}. Natural ambient light, real-world textures and small imperfections, subtle film grain, no people in focus, no text, borders, or user interface.`,
             apiKey,
             width: 1024,
             height: 768,

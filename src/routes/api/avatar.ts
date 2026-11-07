@@ -72,6 +72,7 @@ export const Route = createFileRoute("/api/avatar")({
             : hasRef
               ? `Study the reference photo (subject, features, lighting, setting) and create a brand-new, original ultra-realistic portrait photograph inspired by it — not a copy. Subject: ${subject}.`
               : `Candid raw photo taken on a smartphone, unedited, documentary style, natural daylight, sharp focus. Subject: ${subject}.`,
+          "Realistic documentary lighting: soft natural window light or overcast daylight with gentle real shadows, no studio glow. Subtle analog film grain, slight lens imperfections, true-to-life colors, never over-saturated.",
           "Real human skin: visible pores, fine wrinkles, uneven skin tone, slight redness, tiny moles, peach fuzz, natural oil shine, flyaway hairs, imperfect teeth and eyebrows. NOT a 3D render, NOT CGI, NOT digital art, NOT a doll, no smooth plastic or waxy skin, no beauty filter, no airbrushing, no makeup-ad look.",
           editing ? "" : fidelity,
           "Make it look like a real, imperfect living being — never a flawless, airbrushed or plastic face. Include natural skin texture and visible pores, slight facial asymmetry, small blemishes, freckles, fine lines or stray hairs, uneven natural lighting and real-world details. Perfect symmetry or doll-like smoothness is wrong.",
@@ -84,12 +85,20 @@ export const Route = createFileRoute("/api/avatar")({
         let warning: string | null = null;
         try {
           try {
-            image = await generatePollinationsImage({
-              prompt: fullPrompt,
-              apiKey,
-              ...(hasRef && reference instanceof File ? { reference } : {}),
-              signal: request.signal,
-            });
+            // A saved Hugging Face token (and no Pollinations key) means the player wants FLUX Schnell first for text-only photos.
+            const { getHuggingFaceApiKey } = await import("@/lib/server/player-ai.server");
+            const preferredHf = !apiKey && !hasRef ? await getHuggingFaceApiKey(session.user.id) : null;
+            if (preferredHf) {
+              const { generateHuggingFaceImage } = await import("@/lib/server/pollinations.server");
+              image = await generateHuggingFaceImage({ prompt: fullPrompt, apiKey: preferredHf, signal: request.signal });
+            } else {
+              image = await generatePollinationsImage({
+                prompt: fullPrompt,
+                apiKey,
+                ...(hasRef && reference instanceof File ? { reference } : {}),
+                signal: request.signal,
+              });
+            }
           } catch (first) {
             // Tier 2: Hugging Face (if the player saved a free token). Tier 3: free public server.
             const { getHuggingFaceApiKey } = await import("@/lib/server/player-ai.server");

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { LanguageModel, UIMessage } from "ai";
 import { memoryContext, RECENT_MESSAGE_COUNT } from "@/lib/conversation-memory";
+import { GUEST_POOL_EMPTY } from "@/lib/guest-limits";
 
 const LENGTHS: Record<string, string> = {
   short: "Keep replies short: 1-3 sentences.",
@@ -49,6 +50,14 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const last = messages[messages.length - 1];
+        if (last?.role === "user" && user.is_anonymous) {
+          const { data: allowed, error: poolError } = await supabase.rpc("use_guest_message");
+          if (poolError) {
+            console.error("guest pool check failed", poolError.code);
+            return new Response("Guest play isn't ready yet. Please sign in with Google to keep chatting.", { status: 503 });
+          }
+          if (!allowed) return new Response(`${GUEST_POOL_EMPTY}: The free guest messages have run out.`, { status: 402 });
+        }
         if (last?.role === "user") {
           const { error } = await supabase.from("messages").insert({
             character_id: character.id,

@@ -13,3 +13,6 @@
 - [x] Vault requests: music loop + credits, shared owner tab, in-chat photo button, free AI fallback, share chats
 - [x] Player look, idea chips, Hugging Face photo backup, trash bin, camera angles
 - [x] Chats tab: maker names + public wall per game
+- [x] Guest play with nickname, open home feed, shared guest message pool, save guest progress on Google sign-in
+- [x] Out-of-messages window (Google sign-in, Pro, sponsor clip placeholder); removed Pollinations-key scene note
+- [ ] Pro payment link + QR code (waiting on the Orange payment link)

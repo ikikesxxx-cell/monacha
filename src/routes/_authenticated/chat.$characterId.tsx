@@ -15,6 +15,8 @@ import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea 
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { StoryMemory } from "@/components/StoryMemory";
+import { UpgradeDialog } from "@/components/UpgradeDialog";
+import { isGuestPoolEmptyError } from "@/lib/guest-limits";
 import { EMPTY_MEMORY, normalizeMemory, type StoryMemory as Memory } from "@/lib/conversation-memory";
 
 async function getChatUserId() {
@@ -83,6 +85,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
   const [sceneUrl, setSceneUrl] = useState<string | null>(null);
   const [sceneSetupNeeded, setSceneSetupNeeded] = useState(false);
   const [sceneError, setSceneError] = useState<string | null>(null);
+  const [outOfMessages, setOutOfMessages] = useState(false);
   const requestedLocation = useRef<string | null>(null);
   const loadScene = useCallback(async (nextMemory: Memory) => {
     const location = nextMemory.facts.find((fact) => fact.key === "player.location")?.detail.trim();
@@ -149,7 +152,11 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
         void loadScene(nextMemory);
       }
     },
-    onError: (e) => { setReadingMemory(false); toast.error(e.message || "Something went wrong."); },
+    onError: (e) => {
+      setReadingMemory(false);
+      if (isGuestPoolEmptyError(e.message)) { setOutOfMessages(true); return; }
+      toast.error(e.message || "Something went wrong.");
+    },
     onFinish: () => { qc.invalidateQueries({ queryKey: ["messages", character.id] }); void loadSuggestions(); },
   });
   const busy = status === "submitted" || status === "streaming";
@@ -247,6 +254,7 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
 
   return (
     <main className="mx-auto flex h-[calc(100vh-65px)] max-w-3xl flex-col px-4">
+      <UpgradeDialog open={outOfMessages} onOpenChange={setOutOfMessages} outOfMessages />
       <div className="flex items-center gap-3 py-4">
         <Button asChild variant="ghost" size="icon" className="rounded-full">
           <Link to="/characters" aria-label="Back"><ArrowLeft className="h-5 w-5" /></Link>
@@ -303,11 +311,6 @@ function ChatWindow({ character, initial, initialMemory }: { character: Characte
             <Button size="sm" className="rounded-full" onClick={savePersona}>Save</Button>
           </div>
         </div>
-      )}
-      {sceneSetupNeeded && (
-        <p className="mb-2 text-center text-xs text-muted-foreground">
-          Add a Pollinations key in <Link to="/settings" className="underline">Settings</Link> to enable scene backgrounds.
-        </p>
       )}
       {!sceneSetupNeeded && sceneError && (
         <p className="mb-2 text-center text-xs text-muted-foreground">
