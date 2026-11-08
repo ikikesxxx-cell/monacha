@@ -24,6 +24,7 @@ type ProviderSettings = {
   textProvider: TextProvider;
   textModel: string;
   configured: Record<Provider, boolean>;
+  hints: Record<Provider, string | null>;
 };
 const defaultModels: Record<TextProvider, string> = {
   groq: "llama-3.3-70b-versatile",
@@ -72,6 +73,7 @@ function SettingsPage() {
     textProvider: "gemini",
     textModel: defaultModels.gemini,
     configured: { groq: false, gemini: false, openrouter: false, pollinations: false, huggingface: false },
+    hints: { groq: null, gemini: null, openrouter: null, pollinations: null, huggingface: null },
   });
   const [apiKeys, setApiKeys] = useState<Record<Provider, string>>({
     groq: "",
@@ -97,6 +99,7 @@ function SettingsPage() {
             textProvider: result.textProvider,
             textModel: result.textModel || defaultModels[result.textProvider as TextProvider],
             configured: result.configured,
+            hints: result.hints ?? { groq: null, gemini: null, openrouter: null, pollinations: null, huggingface: null },
           });
         }
       } catch (error) {
@@ -128,7 +131,7 @@ function SettingsPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Could not save provider key.");
-      setProviderSettings((current) => ({ ...current, configured: { ...current.configured, [provider]: true } }));
+      setProviderSettings((current) => ({ ...current, configured: { ...current.configured, [provider]: true }, hints: { ...current.hints, [provider]: `••••${apiKey.slice(-4)}` } }));
       setApiKeys((current) => ({ ...current, [provider]: "" }));
       toast.success(`${providerNames[provider]} key saved`);
     } catch (error) {
@@ -148,7 +151,7 @@ function SettingsPage() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Could not remove provider key.");
-      setProviderSettings((current) => ({ ...current, configured: { ...current.configured, [provider]: false } }));
+      setProviderSettings((current) => ({ ...current, configured: { ...current.configured, [provider]: false }, hints: { ...current.hints, [provider]: null } }));
       setApiKeys((current) => ({ ...current, [provider]: "" }));
       toast.success(`${providerNames[provider]} key removed`);
     } catch (error) {
@@ -220,7 +223,7 @@ function SettingsPage() {
         <div>
           <h2 className="text-xl font-semibold">AI provider keys</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Chat and photos work for free with no key at all. Adding your own key is optional and can give better quality. Keys are stored privately and never sent back to this page after saving. Provider free tiers, limits, and pricing can change.
+            Chat and photos work for free with no key at all. When you save your own key, it is always used first; only when its budget runs out does the app switch to the free backup. Keys are stored privately and never sent back to this page after saving. Provider free tiers, limits, and pricing can change.
           </p>
           {providerMigrationRequired && (
             <p role="status" className="mt-3 rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
@@ -237,14 +240,14 @@ function SettingsPage() {
               autoComplete="new-password"
               value={apiKeys[provider]}
               onChange={(event) => setApiKeys((current) => ({ ...current, [provider]: event.target.value }))}
-              placeholder={providerSettings.configured[provider] ? "Saved — enter a new key to replace" : "Paste your API key"}
+              placeholder={providerSettings.configured[provider] ? `In use: ${providerSettings.hints[provider] ?? "saved key"} — paste a new key to replace` : "Paste your API key"}
               disabled={providerLoading || providerMigrationRequired}
             />
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs text-muted-foreground">
-                {providerSettings.configured[provider] ? "Key saved" : "No key saved"}
+                {providerSettings.configured[provider] ? <span className="font-semibold text-primary">✓ In use {providerSettings.hints[provider]}</span> : "No key saved"}
                 {provider === "pollinations" && " · Photo and scene usage spends from your Pollinations budget"}
-                {provider === "huggingface" && " · Free hf_ token, used when Pollinations is out"}
+                {provider === "huggingface" && " · Free hf_ token, used when your Pollinations budget is out"}
               </span>
               <div className="flex gap-2">
                 <Button type="button" size="sm" variant="outline" className="rounded-full" disabled={providerBusy !== null || providerLoading || providerMigrationRequired || !apiKeys[provider].trim()} onClick={() => saveProviderKey(provider)}>

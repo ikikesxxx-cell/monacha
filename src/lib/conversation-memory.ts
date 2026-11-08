@@ -12,7 +12,7 @@ export const memorySchema = z.object({
 export type StoryMemory = z.infer<typeof memorySchema>;
 export const EMPTY_MEMORY: StoryMemory = { facts: [], summary: "" };
 export const MEMORY_BATCH_SIZE = 40;
-export const RECENT_MESSAGE_COUNT = 24;
+export const RECENT_MESSAGE_COUNT = 60;
 
 export function isLowInformation(text: string) {
   return /^(hello|hi|hey|hiya|good morning|good evening|thanks|thank you|ok|okay|bye|goodbye|yes|no)[\s.!?,]*$/i.test(text.trim());
@@ -27,7 +27,7 @@ export function normalizeMemory(value: unknown): StoryMemory {
     const detail = fact.detail.trim().slice(0, 600);
     if (key && detail && !isLowInformation(detail)) keyed.set(key, { ...fact, key, detail });
   }
-  return { facts: [...keyed.values()].slice(-80), summary: parsed.data.summary.trim().slice(0, 3000) };
+  return { facts: [...keyed.values()].slice(-200), summary: parsed.data.summary.trim().slice(0, 8000) };
 }
 
 export function memoryContext(memory: StoryMemory) {

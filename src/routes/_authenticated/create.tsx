@@ -33,7 +33,7 @@ type Mode = "solo" | "directed" | "brainstorm";
 const MODES: { key: Mode; title: string; text: string; icon: typeof PenLine }[] = [
   { key: "solo", title: "On my own", text: "Fill in everything yourself, no AI help.", icon: PenLine },
   { key: "directed", title: "AI follows my orders", text: "Tell the AI what to make, it writes it for you.", icon: Wand2 },
-  { key: "brainstorm", title: "Think together", text: "Not sure how to say it? The AI asks questions with you.", icon: MessagesSquare },
+  { key: "brainstorm", title: "Think together", text: "Just chat with the AI — even say hi — and it builds it with you.", icon: MessagesSquare },
 ];
 
 function CreatePage() {
@@ -54,6 +54,37 @@ function CreatePage() {
   const [answers, setAnswers] = useState("");
   const [questions, setQuestions] = useState<string[]>([]);
   const [helping, setHelping] = useState(false);
+  const [chat, setChat] = useState<{ role: "player" | "ai"; text: string }[]>([
+    { role: "ai", text: "Hi! What would you like to make? Tell me anything — a person, a story, a world…" },
+  ]);
+  const [chatInput, setChatInput] = useState("");
+
+  async function sendChat() {
+    const text = chatInput.trim();
+    if (!text || helping) return;
+    const next = [...chat, { role: "player" as const, text }];
+    setChat(next);
+    setChatInput("");
+    setHelping(true);
+    try {
+      const res = await fetch("/api/character-helper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+        body: JSON.stringify({ chat: next }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "The AI couldn't answer.");
+      setChat([...next, { role: "ai", text: json.reply || "Got it!" }]);
+      if (json.name?.trim()) setName(json.name);
+      if (json.tagline?.trim()) setTagline(json.tagline);
+      if (json.behavior?.trim()) setBehavior(json.behavior);
+      if (json.rules?.trim()) setRules(json.rules);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setHelping(false);
+    }
+  }
 
   async function askHelper() {
     if (idea.trim().length < 3) { toast.error("Describe your character idea first."); return; }
@@ -145,9 +176,26 @@ function CreatePage() {
 
       <div className="space-y-5 rounded-[2rem] border border-border bg-card/90 p-6 shadow-soft">
         <h1 className="text-3xl font-semibold">Create your AI</h1>
-        {mode !== "solo" && (
+        {mode === "brainstorm" && (
           <div className="space-y-3 rounded-3xl bg-muted/60 p-4">
-            <Label htmlFor="idea">{mode === "brainstorm" ? "Tell the AI roughly what you're thinking of" : "Tell the AI what to make"}</Label>
+            <div className="max-h-80 space-y-2 overflow-y-auto">
+              {chat.map((m, i) => (
+                <div key={i} className={m.role === "player" ? "ml-8 rounded-2xl bg-primary p-3 text-sm text-primary-foreground" : "mr-8 rounded-2xl bg-card p-3 text-sm"}>
+                  {m.text}
+                </div>
+              ))}
+              {helping && <div className="mr-8 flex items-center gap-2 rounded-2xl bg-card p-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> typing…</div>}
+            </div>
+            <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void sendChat(); }}>
+              <Input value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Say anything, like hi…" aria-label="Message the AI" />
+              <Button type="submit" className="rounded-full" disabled={helping || !chatInput.trim()}>Send</Button>
+            </form>
+            <p className="text-xs text-muted-foreground">The AI fills in the tabs below as you chat. You can change anything before saving.</p>
+          </div>
+        )}
+        {mode === "directed" && (
+          <div className="space-y-3 rounded-3xl bg-muted/60 p-4">
+            <Label htmlFor="idea">Tell the AI what to make</Label>
             <Textarea id="idea" rows={2} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="a grumpy cat who rules a castle…" />
             {questions.length > 0 && (
               <div className="space-y-2 rounded-2xl bg-card p-3">

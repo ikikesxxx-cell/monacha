@@ -21,6 +21,9 @@ const KEY_COLUMNS: Record<Provider, "groq_api_key" | "gemini_api_key" | "openrou
   huggingface: "huggingface_api_key",
 };
 
+/** Only the last 4 characters ever leave the server, so players can see which key is in use. */
+const hint = (key: string | null | undefined) => (key ? `••••${key.slice(-4)}` : null);
+
 export const Route = createFileRoute("/api/provider-settings")({
   server: {
     handlers: {
@@ -45,6 +48,13 @@ export const Route = createFileRoute("/api/provider-settings")({
         return Response.json({
           textProvider: data?.text_provider ?? "gemini",
           textModel: data?.text_model ?? "",
+          hints: {
+            groq: hint(data?.groq_api_key),
+            gemini: hint(data?.gemini_api_key),
+            openrouter: hint(data?.openrouter_api_key),
+            pollinations: hint(data?.pollinations_api_key),
+            huggingface: hint(data?.huggingface_api_key),
+          },
           configured: {
             groq: Boolean(data?.groq_api_key),
             gemini: Boolean(data?.gemini_api_key),

@@ -64,14 +64,15 @@ export const Route = createFileRoute("/api/scene")({
 
         const { generatePollinationsImage, imageExtension, PollinationsRequestError } = await import("@/lib/server/pollinations.server");
         let image: Awaited<ReturnType<typeof generatePollinationsImage>>;
+        const scenePrompt = `A wide, realistic documentary photograph of the place: ${location}. Natural ambient light, real-world textures and small imperfections, subtle film grain, no people in focus, no text, borders, or user interface.`;
         try {
-          image = await generatePollinationsImage({
-            prompt: `A wide, realistic documentary photograph of the place: ${location}. Natural ambient light, real-world textures and small imperfections, subtle film grain, no people in focus, no text, borders, or user interface.`,
-            apiKey,
-            width: 1024,
-            height: 768,
-            signal: request.signal,
-          });
+          try {
+            image = await generatePollinationsImage({ prompt: scenePrompt, apiKey, width: 1024, height: 768, signal: request.signal });
+          } catch (first) {
+            // Own key first; when its budget is gone, fall back to the free service.
+            if (!apiKey || request.signal.aborted) throw first;
+            image = await generatePollinationsImage({ prompt: scenePrompt, apiKey: null, width: 1024, height: 768, signal: request.signal });
+          }
         } catch (error) {
           if (error instanceof PollinationsRequestError) {
             console.error("scene generation failed", error.status);

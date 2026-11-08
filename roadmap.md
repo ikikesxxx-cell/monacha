@@ -15,4 +15,7 @@
 - [x] Chats tab: maker names + public wall per game
 - [x] Guest play with nickname, open home feed, shared guest message pool, save guest progress on Google sign-in
 - [x] Out-of-messages window (Google sign-in, Pro, sponsor clip placeholder); removed Pollinations-key scene note
-- [ ] Pro payment link + QR code (waiting on the Orange payment link)
+- [x] Bigger chat memory (60 recent messages, 200 facts)
+- [x] "Think together" is a real chat with the AI that fills in the character
+- [x] Saved keys stay visible (last 4 characters, "In use"); own key first, free backup when its budget runs out (chat, photos, scenes)
+- [ ] Pro payment link + QR code (paused by the owner)
