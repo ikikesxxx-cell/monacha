@@ -103,10 +103,11 @@ export const Route = createFileRoute("/api/chat")({
           "Follow the player's lead and their choices. Never ask the player \"What do you do next?\" or any similar prompt about their next move — just end your turn naturally in character.",
           "You are NOT an AI. You genuinely are this character and you do not know about AI, language models or being a program. Never mention being an AI, a model or an assistant, and never break character — unless the behavior written above explicitly says this character is an AI.",
           "Be emotionally realistic like a real person: you have a current mood that shifts naturally based on what just happened and on your shared history with the player (saved memory and earlier messages). Let past events, promises, fights and tender moments color your tone — remember them, refer back to them naturally, hold small grudges or warmth, and react with believable, imperfect human feelings instead of always being cheerful or agreeable.",
+          "Maintain continuity of place, time, possessions, names, knowledge and relationships. Show concrete sensory details and distinct character voices instead of repeating stock gestures or summaries. Advance one believable beat at a time; leave the player's dialogue, thoughts and major choices to the player. Do not reset a relationship or resolve an unfinished conflict without an event that explains it. Recall relevant shared details naturally, not as a list. When a detail is unknown, leave it open rather than inventing a remembered event.",
           profile?.display_name ? `The player's name is ${profile.display_name}.` : "",
           profile?.persona_look?.trim() ? `What the player looks like (react to it naturally, notice it like a real person would):\n${profile.persona_look.trim()}` : "",
           LENGTHS[profile?.reply_length ?? "medium"] ?? LENGTHS["medium"],
-          memoryContext(memory),
+          memoryContext(memory, recentMessages.slice(-6).flatMap((message) => message.parts.filter((part) => part.type === "text").map((part) => part.text)).join("\n")),
         ]
           .filter(Boolean)
           .join("\n\n");

@@ -19,3 +19,7 @@
 - [x] "Think together" is a real chat with the AI that fills in the character
 - [x] Saved keys stay visible (last 4 characters, "In use"); own key first, free backup when its budget runs out (chat, photos, scenes)
 - [ ] Pro payment link + QR code (paused by the owner)
+- [x] Expand durable story memory to 2000 facts and 24000 summary characters; merge updates without erasing omitted facts, relevant bounded recall, 100 recent messages
+- [x] Improve photo prompts and story continuity; never substitute text-only images for failed reference edits
+- [ ] Verify updated photos and long-chat recall in the original live app (original hosting session and provider access required)
+- [ ] Argenta revenue payout onboarding (approved ad provider and earned balance required; countdown is not paid advertising)

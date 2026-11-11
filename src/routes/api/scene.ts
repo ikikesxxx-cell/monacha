@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EMPTY_MEMORY, normalizeMemory } from "@/lib/conversation-memory";
+import { environmentPrompt } from "@/lib/photo-realism";
 
 export const Route = createFileRoute("/api/scene")({
   server: {
@@ -64,7 +65,7 @@ export const Route = createFileRoute("/api/scene")({
 
         const { generatePollinationsImage, imageExtension, PollinationsRequestError } = await import("@/lib/server/pollinations.server");
         let image: Awaited<ReturnType<typeof generatePollinationsImage>>;
-        const scenePrompt = `A wide, realistic documentary photograph of the place: ${location}. Natural ambient light, real-world textures and small imperfections, subtle film grain, no people in focus, no text, borders, or user interface.`;
+        const scenePrompt = environmentPrompt(location);
         try {
           try {
             image = await generatePollinationsImage({ prompt: scenePrompt, apiKey, width: 1024, height: 768, signal: request.signal });

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { portraitPrompt } from "@/lib/photo-realism";
 
 function errorFor(status: number) {
   if (status === 429) return "Pollinations is rate limited. Please wait a moment.";
@@ -64,22 +65,7 @@ export const Route = createFileRoute("/api/avatar")({
         );
 
         const subject = editing ? `${prompt ? `${prompt} — ` : ""}change: ${change}` : prompt || "the subject of the reference photo";
-        const fidelity =
-          "Follow every detail of the description exactly, especially skin tone, ethnicity, hair color, eye color, age and expression. Never lighten, darken or change the described skin tone.";
-        const fullPrompt = [
-          editing
-            ? `Edit this photo. The change request may be short and casual (e.g. "longer hair") — interpret it naturally. Apply ONLY this change: ${change}. Keep everything else identical — same person or animal, face, skin tone, pose, lighting, background and photo style. Keep it ultra-realistic, sharp and high detail, never blurry.`
-            : hasRef
-              ? `Study the reference photo (subject, features, lighting, setting) and create a brand-new, original ultra-realistic portrait photograph inspired by it — not a copy. Subject: ${subject}.`
-              : `Candid raw photo taken on a smartphone, unedited, documentary style, natural daylight, sharp focus. Subject: ${subject}.`,
-          "Realistic documentary lighting: soft natural window light or overcast daylight with gentle real shadows, no studio glow. Subtle analog film grain, slight lens imperfections, true-to-life colors, never over-saturated.",
-          "Real human skin: visible pores, fine wrinkles, uneven skin tone, slight redness, tiny moles, peach fuzz, natural oil shine, flyaway hairs, imperfect teeth and eyebrows. NOT a 3D render, NOT CGI, NOT digital art, NOT a doll, no smooth plastic or waxy skin, no beauty filter, no airbrushing, no makeup-ad look.",
-          editing ? "" : fidelity,
-          "Make it look like a real, imperfect living being — never a flawless, airbrushed or plastic face. Include natural skin texture and visible pores, slight facial asymmetry, small blemishes, freckles, fine lines or stray hairs, uneven natural lighting and real-world details. Perfect symmetry or doll-like smoothness is wrong.",
-          editing ? "" : learning,
-        ]
-          .filter(Boolean)
-          .join(" ");
+        const fullPrompt = portraitPrompt({ subject, change, editing, hasReference: hasRef, learning });
 
         let image: Awaited<ReturnType<typeof generatePollinationsImage>>;
         let warning: string | null = null;
@@ -100,6 +86,8 @@ export const Route = createFileRoute("/api/avatar")({
               });
             }
           } catch (first) {
+            // Never replace a reference/edit with unrelated text-only generation.
+            if (hasRef || request.signal.aborted) throw first;
             // Tier 2: Hugging Face (if the player saved a free token). Tier 3: free public server.
             const { getHuggingFaceApiKey } = await import("@/lib/server/player-ai.server");
             const { generateHuggingFaceImage } = await import("@/lib/server/pollinations.server");
